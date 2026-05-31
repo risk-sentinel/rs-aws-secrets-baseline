@@ -1,0 +1,98 @@
+require "aws_backend"
+
+# aws_secretsmanager_secret_policy — resource-policy + replication
+# introspection for a single Secrets Manager secret.
+#
+# The stock inspec-aws aws_secretsmanager_secret resource (describe_secret)
+# exposes rotation, KMS key, dates, tags and primary_region, but NOT the
+# resource policy (GetResourcePolicy). This custom resource adds it so the
+# SEC-3.x resource-policy deep checks and SEC-4.1 replication check can
+# assert real configuration rather than presence alone.
+#
+# Uses @aws.secretsmanager_client — already enumerated in AwsConnection's
+# <service>_client dispatcher (the stock aws_secretsmanager_secret resource
+# uses the same), so no aws_client() escape hatch is required.
+#
+# Resource-policy statement analysis is delegated to the pure-Ruby
+# IamPolicyStatement module (ported from foundations #72).
+class AwsSecretsManagerSecretPolicy < AwsResourceBase
+  name "aws_secretsmanager_secret_policy"
+  desc "Resource policy and replication posture for a Secrets Manager secret."
+  example <<~EX
+    describe aws_secretsmanager_secret_policy(secret_id: arn) do
+      it { should_not have_public_statements }
+      it { should enforce_secure_transport }
+    end
+  EX
+
+  attr_reader :secret_id, :policy_json, :statements, :replica_regions
+
+  def initialize(opts = {})
+    opts = { secret_id: opts } if opts.is_a?(String)
+    super(opts)
+    validate_parameters(required: %i(secret_id))
+    raise ArgumentError, "#{@__resource_name__}: secret_id must be provided" unless opts[:secret_id] && !opts[:secret_id].empty?
+
+    @display_name    = opts[:secret_id]
+    @secret_id       = opts[:secret_id]
+    @statements      = []
+    @replica_regions = []
+    @policy_json     = nil
+    @exists          = false
+
+    catch_aws_errors do
+      load_policy
+      load_replication
+    end
+  end
+
+  def exists?
+    @exists
+  end
+
+  # Allow statements with a wildcard principal and no narrowing condition.
+  def public_statements
+    @statements.select { |s| IamPolicyStatement.effectively_public?(s) }
+  end
+
+  def has_public_statements?
+    !public_statements.empty?
+  end
+
+  # True only when the policy contains an explicit Deny on non-TLS access.
+  def enforce_secure_transport?
+    @statements.any? { |s| IamPolicyStatement.denies_insecure_transport?(s) }
+  end
+
+  def wildcard_action_statements
+    @statements.select { |s| IamPolicyStatement.allow?(s) && IamPolicyStatement.action_is_wildcard?(s) }
+  end
+
+  def has_resource_policy?
+    !@statements.empty?
+  end
+
+  def replicated?
+    !@replica_regions.empty?
+  end
+
+  def to_s
+    "Secrets Manager secret policy #{@display_name}"
+  end
+
+  private
+
+  def load_policy
+    resp = @aws.secretsmanager_client.get_resource_policy({ secret_id: @secret_id })
+    @exists = true
+    @policy_json = resp.resource_policy
+    return if @policy_json.nil?
+    @statements = IamPolicyStatement.parse(@policy_json)
+  end
+
+  def load_replication
+    resp = @aws.secretsmanager_client.describe_secret({ secret_id: @secret_id })
+    @exists = true
+    @replica_regions = Array(resp.replication_status).map(&:region).compact
+  end
+end

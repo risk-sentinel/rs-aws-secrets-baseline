@@ -26,4 +26,4 @@ module SecretsScopeHelpers
   end
 end
 
-Inspec::Rule.include(SecretsScopeHelpers)
+::Inspec::Rule.include(SecretsScopeHelpers)

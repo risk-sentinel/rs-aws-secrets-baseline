@@ -11,6 +11,10 @@
 # customer baseline would be a false positive (inherited-from-AWS).
 module SecretsScopeHelpers
   def secrets_in_scope
+    # aws_secretsmanager_secrets uses catch_aws_errors internally, so API
+    # errors (AccessDenied, etc.) yield an empty table rather than raising.
+    # We deliberately do NOT rescue here — a coding error (e.g. a missing
+    # resource) must surface as a failure, not be masked as empty scope.
     @secrets_in_scope ||= begin
       all = aws_secretsmanager_secrets
       customer_owned = []
@@ -20,8 +24,6 @@ module SecretsScopeHelpers
         customer_owned << arn
       end
       customer_owned
-    rescue StandardError
-      []
     end
   end
 end

@@ -20,11 +20,8 @@ control "SEC-7.1" do
   impact 0.0 unless require_ep
   only_if("require_vpc_endpoint is false") { require_ep }
 
-  endpoints = aws_vpc_endpoints.where { service_name.to_s.end_with?(".secretsmanager") }
   describe "Secrets Manager interface VPC endpoint" do
-    subject { endpoints.entries }
-    it "must exist" do
-      expect(endpoints.entries).not_to be_empty
-    end
+    subject { aws_secretsmanager_vpc_endpoints }
+    it { should exist }
   end
 end

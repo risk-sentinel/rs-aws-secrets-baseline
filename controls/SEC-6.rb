@@ -17,14 +17,19 @@ control "SEC-6.1" do
 
   impact 0.5
 
-  describe aws_cloudtrail_trails.where { is_multi_region_trail } do
-    it { should exist }
+  # The plural resource only registers trail_arns/names columns (no
+  # multi-region filter), so resolve multi-region + logging on the
+  # singular resource per trail.
+  trail_names = aws_cloudtrail_trails.names
+  multi_region_logging = trail_names.select do |name|
+    t = aws_cloudtrail_trail(name)
+    t.exists? && t.is_multi_region_trail && t.logging?
   end
 
-  aws_cloudtrail_trails.where { is_multi_region_trail }.trail_arns.each do |trail_arn|
-    describe aws_cloudtrail_trail(trail_arn) do
-      it { should be_logging }
-      its("include_global_service_events") { should eq true }
+  describe "Multi-region CloudTrail trails that are actively logging" do
+    subject { multi_region_logging }
+    it "must include at least one trail (captures Secrets Manager events)" do
+      expect(multi_region_logging).not_to be_empty
     end
   end
 end

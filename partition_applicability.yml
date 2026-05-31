@@ -1,0 +1,83 @@
+# Per-control partition applicability — auditor-facing flat table.
+# Values per partition: applicable | not_applicable | partial
+# `reason` is required when not_applicable or partial.
+# Keep this file in sync with `tag applicable_partitions:` on each control.
+#
+# All controls target AWS Commercial (aws) and AWS GovCloud non-DoD
+# (aws-us-gov). Secrets Manager, KMS, CloudTrail and interface VPC
+# endpoints exist in both partitions. The one partition nuance is
+# cross-region replication (SEC-4.1): Secrets Manager replication does
+# not cross partitions, so a GovCloud consumer replicates within
+# aws-us-gov only — still applicable, documented per-control.
+
+controls:
+  - id: SEC-1.1
+    title: "Automatic rotation enabled"
+    aws: applicable
+    aws-us-gov: applicable
+    reason: ''
+  - id: SEC-1.2
+    title: "Rotation interval within max window"
+    aws: applicable
+    aws-us-gov: applicable
+    reason: ''
+  - id: SEC-1.3
+    title: "Last rotation within max window"
+    aws: applicable
+    aws-us-gov: applicable
+    reason: ''
+  - id: SEC-2.1
+    title: "Customer-managed CMK encryption (when required)"
+    aws: applicable
+    aws-us-gov: applicable
+    reason: ''
+  - id: SEC-2.2
+    title: "CMK key rotation enabled"
+    aws: applicable
+    aws-us-gov: applicable
+    reason: ''
+  - id: SEC-2.3
+    title: "FIPS-validated cryptography (KMS module inherited)"
+    aws: applicable
+    aws-us-gov: applicable
+    reason: ''
+  - id: SEC-3.1
+    title: "No public / wildcard-principal resource policy"
+    aws: applicable
+    aws-us-gov: applicable
+    reason: ''
+  - id: SEC-3.2
+    title: "Resource policy enforces TLS"
+    aws: applicable
+    aws-us-gov: applicable
+    reason: ''
+  - id: SEC-3.3
+    title: "BlockPublicPolicy guardrail (attestation)"
+    aws: applicable
+    aws-us-gov: applicable
+    reason: ''
+  - id: SEC-4.1
+    title: "DR-critical secrets replicated"
+    aws: applicable
+    aws-us-gov: partial
+    reason: "Secrets Manager replication does not cross partitions; GovCloud consumers replicate within aws-us-gov regions only."
+  - id: SEC-5.1
+    title: "Required governance tags present"
+    aws: applicable
+    aws-us-gov: applicable
+    reason: ''
+  - id: SEC-5.2
+    title: "Stale/unused secrets remediated"
+    aws: applicable
+    aws-us-gov: applicable
+    reason: ''
+  - id: SEC-6.1
+    title: "CloudTrail captures Secrets Manager events"
+    aws: applicable
+    aws-us-gov: applicable
+    reason: ''
+  - id: SEC-7.1
+    title: "Interface VPC endpoint for Secrets Manager"
+    aws: applicable
+    aws-us-gov: applicable
+    reason: ''

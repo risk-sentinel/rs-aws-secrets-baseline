@@ -1,0 +1,78 @@
+name: aws-secrets-baseline
+title: AWS Secrets Manager Security Baseline
+maintainer: Risk Sentinel
+copyright: Risk Sentinel
+copyright_email: support@risk-sentinel.org
+license: Apache-2.0
+summary: |
+  Custom Tier-2 InSpec baseline for AWS Secrets Manager.
+
+  No CIS or DISA STIG benchmark exists for Secrets Manager; controls are
+  anchored to NIST 800-53 r5 (primary), AWS Foundational Security Best
+  Practices (SecretsManager.1-4), the AWS Secrets Manager best-practices
+  guide, and DISA SRG CCI anchors where applicable. Targets AWS
+  Commercial (aws) and AWS GovCloud non-DoD (aws-us-gov). Per-control
+  partition applicability is documented in partition_applicability.yml
+  and encoded as `tag applicable_partitions:`.
+
+  Built for any AWS consumer; runtime behaviour is tuned via inputs
+  (rotation window, DR-critical ARNs, required tag keys, staleness
+  threshold, CMK / VPC-endpoint enforcement). Each control carries
+  nist + cci tags.
+version: 0.1.0
+inspec_version: '>= 5.0'
+
+supports:
+  - platform: aws
+
+depends:
+  - name: inspec-aws
+    git: https://github.com/inspec/inspec-aws.git
+    tag: v1.21.0
+
+inputs:
+  - name: aws_partition
+    type: string
+    value: aws
+    description: >-
+      AWS partition the scan runs against. One of: aws (Commercial),
+      aws-us-gov (GovCloud non-DoD).
+  - name: max_rotation_days
+    type: numeric
+    value: 90
+    description: Maximum allowed rotation interval / last-rotation age (IA-5(1)).
+  - name: require_cmk
+    type: boolean
+    value: true
+    description: >-
+      When true, secrets must use a customer-managed KMS CMK (not the
+      aws/secretsmanager default). Set false for consumers who accept
+      the AWS-managed key.
+  - name: stale_days
+    type: numeric
+    value: 90
+    description: Secrets not accessed within this many days are flagged (AC-2(3)).
+  - name: required_tag_keys
+    type: array
+    value: []
+    description: >-
+      Governance tag keys every secret must carry (CM-8). Empty = require
+      at least one non-system tag.
+  - name: dr_critical_secret_arns
+    type: array
+    value: []
+    description: >-
+      ARNs of DR-critical secrets that must be cross-region replicated
+      (CP-9). Empty = control is N/A.
+  - name: require_vpc_endpoint
+    type: boolean
+    value: true
+    description: Require an interface VPC endpoint for Secrets Manager (SC-7).
+  - name: secret_arn_allowlist
+    type: array
+    value: []
+    description: Secret ARNs exempt from the resource-policy public-access check.
+  - name: block_public_policy_attestation_ref
+    type: string
+    value: ''
+    description: Evidence reference for the BlockPublicPolicy guardrail attestation.

@@ -76,3 +76,24 @@ inputs:
     type: string
     value: ''
     description: Evidence reference for the BlockPublicPolicy guardrail attestation.
+  # ---- document_attestation evidence-class bases (sparc-validate#154) ----
+  - name: leveraged_evidence_base
+    type: string
+    value: ''
+    description: Base for leveraged-SYSTEM AWS authorizations (FedRAMP / SOC 2 / ISO). No inherited controls today.
+  - name: policy_provider_base
+    type: string
+    value: ''
+    description: Base for policy-PROVIDER documents the boundary leverages.
+  - name: boundary_docs_base
+    type: string
+    value: ''
+    description: Base for the boundary's OWN governance docs (e.g. SEC-3.3 BlockPublicPolicy SCP/identity-policy guardrail attestation).
+  - name: sec_3_3_attestation_uri
+    type: string
+    value: ''
+    description: Override URI of the SEC-3.3 BlockPublicPolicy guardrail attestation. Empty -> resolves via boundary_docs_base; SKIPs if unset.
+  - name: attestation_max_age_days
+    type: numeric
+    value: 365
+    description: Staleness window (days) for the SEC-3.3 attestation.

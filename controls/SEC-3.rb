@@ -82,13 +82,34 @@ control "SEC-3.3" do
   tag fsbp:                  "SecretsManager (BlockPublicPolicy)"
   tag applicable_partitions: ["aws", "aws-us-gov"]
   tag implementation_status: "alternative"
+  tag attestation_category:  "policy"
 
+  # BlockPublicPolicy guardrail is an account/SCP/identity-policy control with no
+  # per-secret API surface (SEC-3.1 gives detective coverage). Converted to
+  # Pass-with-evidence via document_attestation (sparc-validate#154): the SCP /
+  # identity-policy attestation is a `boundary`-class doc. Resolves to the
+  # sec_3_3_attestation_uri override, else attestation_uri(:boundary, 'SEC-3.3');
+  # empty -> Skip (preserves the prior attestation + saf attest apply fallback).
   ref = input("block_public_policy_attestation_ref")
-  describe "BlockPublicPolicy guardrail attestation" do
-    skip "MANUAL/ATTESTATION: confirm identity policies or SCPs grant "\
-         "secretsmanager:PutResourcePolicy only with Condition Bool "\
-         "secretsmanager:BlockPublicPolicy=true. Detective coverage of "\
-         "effective public access is provided by SEC-3.1. Attestation "\
-         "reference: #{ref.empty? ? 'TBD — populate block_public_policy_attestation_ref' : ref}"
+  uri = input("sec_3_3_attestation_uri", value: "")
+  uri = attestation_uri(:boundary, "SEC-3.3") if uri.to_s.empty?
+  max_age_days = input("attestation_max_age_days", value: 365)
+
+  if uri.to_s.empty?
+    describe "BlockPublicPolicy guardrail attestation" do
+      skip "MANUAL/ATTESTATION: confirm identity policies or SCPs grant "\
+           "secretsmanager:PutResourcePolicy only with Condition Bool "\
+           "secretsmanager:BlockPublicPolicy=true. Detective coverage of "\
+           "effective public access is provided by SEC-3.1. Set boundary_docs_base / "\
+           "sec_3_3_attestation_uri to the guardrail attestation, or `saf attest apply`. "\
+           "Reference: #{ref.empty? ? 'TBD — populate block_public_policy_attestation_ref' : ref}"
+    end
+  else
+    doc = document_attestation(uri, max_age_days: max_age_days)
+    describe "SEC-3.3 BlockPublicPolicy guardrail attestation (#{uri})" do
+      it("reachable") { expect(doc.connection_error).to be_nil, "attestation unreachable: #{doc.connection_error}" }
+      it("exists") { expect(doc.exists?).to eq(true) }
+      it("current") { expect(doc.current?).to eq(true) }
+    end
   end
 end

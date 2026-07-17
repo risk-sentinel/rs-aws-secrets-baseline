@@ -1,4 +1,4 @@
-name: aws-secrets-baseline
+name: rs-aws-secrets-v1r1
 title: AWS Secrets Manager Security Baseline
 maintainer: Risk Sentinel
 copyright: Risk Sentinel

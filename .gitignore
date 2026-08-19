@@ -16,3 +16,5 @@ trufflehog.json
 results.json
 results.*.json
 *.v3.json
+# saf-cli drops this beside whatever it is run against.
+saf-cli.log

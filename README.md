@@ -238,21 +238,37 @@ The Heimdall copy is a **carry-across, not a conversion**: cinc-auditor's own
 copies it and adds the audit record rather than converting anything. Verified by
 loading both shapes into a live Heimdall instance.
 
-**The version-namespace trap.** "HDF v2" means two different things, and reaching
-for the obvious flag gets you the wrong one:
+**The version-namespace trap — and it moved.** "HDF v2" means two different
+things, and which one you get depends on the CLI version:
 
-| | |
-|---|---|
-| Heimdall / SAF | "HDF" is the exec-json `profiles[]` shape — what Heimdall loads |
-| hdf-libs 3.4.1 | `--to hdf@2` **is the CLI default** and emits `baselines[]`; `--to hdf@1` emits the exec-json |
+| `--to` | hdf-libs **3.4.1** | hdf-libs **3.5.1** |
+|---|---|---|
+| `hdf` (default) | `baselines[]` | `baselines[]` |
+| `hdf@1` | `profiles[]` | `profiles[]` |
+| `hdf@2` | `baselines[]` — same as the default | **`profiles[]`** |
+| `hdf@3` | *not a version* | `baselines[]` |
 
-So `hdf convert --to hdf@2 results.final.json` returns the input **byte for byte
-unchanged** — same sha256 — and produces nothing Heimdall will render.
-`--to hdf@1` does reach the right shape, but it is a lossy downgrade: measured,
-it strips `resource_class`, `resource_id` and `resource_params` from every
-result, and `attributes`, `sha256`, `depends` and `waiver_data` from the profile.
+In the Heimdall/SAF world "HDF" has always meant the exec-json `profiles[]`
+shape. hdf-libs **renumbered its own namespace between 3.4.1 and 3.5.1**, so the
+identical command changes meaning across an image bump:
 
-Copying the artifact cinc-auditor already produced avoids both.
+- On **3.4.1**, `hdf convert --to hdf@2 results.final.json` returns the input
+  **byte for byte unchanged** — same sha256 — and produces nothing Heimdall
+  renders.
+- On **3.5.1**, the same command emits the `profiles[]` shape Heimdall does load.
+
+Measured across three different input formats, consistent in each.
+
+If you do use `--to hdf@2` on 3.5.1, know what it costs against the artifact
+cinc-auditor already wrote: it drops `resource_params` from every result,
+`depends` / `status` / `status_message` from the profile, and the whole
+`passthrough` block — so the audit record has to be re-attached afterwards. It
+does keep `resource_class`, `resource_id`, `attributes`, `sha256` and `refs`,
+which the older `--to hdf@1` downgrade strips.
+
+The pipeline copies cinc-auditor's own output instead. That loses nothing, keeps
+the audit record, and means the Heimdall artifact does not silently change shape
+the next time the image is bumped.
 
 ### What the audit record carries
 

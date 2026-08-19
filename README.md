@@ -114,70 +114,136 @@ file states the consequence of an empty value for every input that has one.
 
 A `--reporter cli` run tells you the answer. It does not produce something an
 assessor can trace back to what was assessed, when, by whom, or from which
-scanner output. For evidence, continue past the exec:
+scanner output. For that, use the CI template — it is the whole pipeline, and it
+is **YAML with no helper scripts behind it**, deliberately:
+
+**GitHub** — call the reusable workflow:
+
+```yaml
+jobs:
+  evidence:
+    uses: risk-sentinel/rs-aws-secrets-baseline/.github/workflows/exec-evidence.yml@v0.1.0
+    with:
+      target: my-account
+      profile_name: rs-aws-secrets-v1r1
+      profile_version: "0.1.0"
+    secrets:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+```
+
+**GitLab** — include the template:
+
+```yaml
+include:
+  - project: risk-sentinel/rs-aws-secrets-baseline
+    ref: v0.1.0
+    file: /ci/gitlab/exec-evidence.yml
+    inputs:
+      target: my-account
+      profile_name: rs-aws-secrets-v1r1
+      profile_version: "0.1.0"
+```
+
+### Why the logic is in the YAML and not in a script
+
+An `include:` brings YAML and nothing else. A helper script in this repository's
+`tools/` directory would simply not exist on an including project's runner — and
+the same is true for a GitHub caller using `uses:`. Putting the steps in the YAML
+is what makes this work for *include it* and *clone it on the fly*, on both
+forges. The duplication between the GitHub and GitLab files is deliberate, and
+preferable to a dependency a consumer cannot satisfy.
+
+### The order, and why it is that order
+
+```
+create passthrough -> execute -> convert (gate) -> apply -> label (gate)
+                   -> validate (gate) -> display
+```
+
+The audit record is built **before** the scan, because that is when the honest
+start time and the pipeline provenance are known. Only the facts that cannot
+exist until afterwards — finish time, the digest of the produced artifact, and
+the outcome counts — are added at the end.
+
+### Running it by hand
+
+The same steps, outside CI:
 
 ```bash
+STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
 # 1. assess, keeping the machine-readable result
 cinc-auditor exec . -t aws:// --input-file inputs/mine.yml \
   --reporter cli json:results.json
 
-# 2. convert to native HDF v3 — use `hdf convert`, NOT `saf convert`
+# 2. convert to native HDF v3 — `hdf convert`, NOT `saf convert`
 hdf convert results.json -o results.v3.json
 
-# 3. attach the audit record (see below)
-python3 tools/hdf_audit.py --hdf results.v3.json --out results.audited.json \
-  --raw results.json \
-  --target "<what you assessed>" --target-type cloudAccount \
-  --scan-type runtime --profile-name rs-aws-secrets-v1r1
+# 3. apply the audit record
+jq --arg started "$STARTED_AT" \
+   --arg finished "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+   --arg digest "sha256:$(sha256sum results.json | cut -d' ' -f1)" \
+   --arg target "my-account" '
+   ([.baselines[]?.requirements[]?.results[]?.status]) as $st
+   | .passthrough.audit = {
+       schema_version: 1,
+       target: {id: $target, type: "cloudAccount", boundary: "sparc"},
+       scan:   {type: "runtime", started_at: $started, finished_at: $finished},
+       scanner: {name: "rs-aws-secrets-v1r1", version: "0.1.0"},
+       conversion: {converter: (.generator.name // null),
+                    raw_artifact: "results.json", raw_digest: $digest},
+       outcome: {total: ($st|length),
+                 passed: ($st|map(select(.=="passed"))|length),
+                 failed: ($st|map(select(.=="failed"))|length)}
+     }' results.v3.json > results.audited.json
 
-# 4. label the target component, and GUARD that the label landed
-hdf label set results.audited.json target="<what you assessed>" -o results.final.json
+# 4. label the target, and GUARD that the label landed
+hdf label set results.audited.json target="my-account" -o results.final.json
 hdf label show results.final.json | grep -q '^Component:' \
   || { echo "hdf label wrote nothing — no components in the document"; exit 1; }
 
-# 5. gate on the schema
+# 5. gate on the schema, then show the result
 hdf validate --type results results.final.json
+saf view summary -i results.json
+hdf list results.final.json
 ```
 
-Verified end to end against a live account: 76 results, converts without
-`--no-validate`, and validates.
+Verified end to end against a live account, on both templates: 76 results,
+converts without `--no-validate`, labels, and validates.
 
 ### Three things worth knowing before you copy that
 
 **`hdf convert`, not `saf convert sarif2hdf`.** On identical input, `hdf convert`
-preserves `tool: {format, name, version}` while the saf converter emits a
-profile named `"SARIF"` with the scanner name nowhere in the file. Evidence that
-cannot say what produced it is not evidence anyone can act on.
+preserves `tool: {format, name, version}` while the saf converter emits a profile
+named `"SARIF"` with the scanner name nowhere in the file. Evidence that cannot
+say what produced it is not evidence anyone can act on.
 
 **`hdf label set` reports success even when it labels nothing.** On a document
 with no components it prints `Labels written` and writes a byte-identical file.
-Step 4's guard is not defensive padding.
+The guard in step 4 is not defensive padding.
 
 **The auto-generated component describes the transport, not the target.** For an
-`aws://` run the converter emits a `host` component named `aws`. That is the
-InSpec backend, not your account — which is why steps 3 and 4 exist.
+`aws://` run the converter emits a `host` component named `aws` — the InSpec
+backend, not your account. That is why steps 3 and 4 exist.
 
-### The audit record
+### What the audit record carries
 
-`tools/hdf_audit.py` writes a `passthrough.audit` block, always — clean run,
-failed run, findings or none. It records the target, scan window, scanner,
-profile and version, pipeline provenance (auto-detected from GitHub Actions
-environment variables), who triggered it, the converter, a **sha256 of the
-pre-conversion artifact**, and outcome counts.
+Target, scan window, scanner, profile and version, pipeline provenance, who
+triggered it, the converter, a **sha256 of the pre-conversion artifact**, and
+outcome counts. Written on every run — clean, failed, findings or none — because
+the case it exists for is the one where there are no results to speak for
+themselves.
 
 Two properties are deliberate:
 
-- **Absent is not empty.** A field that does not apply is omitted. A field that
-  applies but could not be determined is `null`, with the reason in
-  `audit.notes`.
-- **It marks what is corroborable.** Run id, run URL, commit and `raw_digest`
-  can be checked against systems the producer does not control. `scan.mode` and
+- **Absent is not empty.** A field that does not apply is omitted rather than
+  written as a blank.
+- **It marks what is corroborable.** Run id, run URL, commit and `raw_digest` can
+  be checked against systems the producer does not control. `scan.mode` and
   `actor.triggered_by` are self-asserted. An audit chain where every field is
   self-asserted is a story, and the record says which is which.
 
 Schema authority: [dev-sec-ops-baseline#33](https://github.com/risk-sentinel/dev-sec-ops-baseline/issues/33).
-
----
 
 ## Consuming this profile
 

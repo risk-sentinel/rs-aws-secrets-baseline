@@ -1,5 +1,23 @@
 require "aws_backend"
 
+# The `aws-sdk-secretsmanager` gem is not part of inspec-aws's default vendored
+# set, so `Aws::SecretsManager` is undefined at exec time even though the gem is
+# present in the image. Defensive require (per the aws_account_contact /
+# aws_workdocs_inventory pattern) so a missing gem degrades to a clear,
+# attributable failure instead of `uninitialized constant Aws::SecretsManager`.
+# Guarded so the three secretsmanager resources can each declare it without a
+# redefinition warning, whatever order the library files load in.
+unless defined?(SECRETSMANAGER_GEM_LOAD_ERROR)
+  SECRETSMANAGER_GEM_LOAD_ERROR = begin
+    require "aws-sdk-secretsmanager"
+    nil
+  rescue LoadError => e
+    "aws-sdk-secretsmanager gem not installed: #{e.message}. File a tracking " \
+      "issue against the cinc-auditor docker image to bundle the gem."
+  end
+end
+
+
 # Vendored from inspec-aws (Apache-2.0). Carried locally because the
 # resolved inspec-aws version no longer ships this resource. Enumerates
 # all secrets via list_secrets with pagination.
@@ -43,11 +61,25 @@ class AWSSecretsManagerSecrets < AwsResourceBase
 
   def fetch_data
     rows = []
+    first = true
     loop do
       catch_aws_errors do
-        @api_response = @aws.secretsmanager_client.list_secrets(@query_params)
+        @api_response = secretsmanager_client.list_secrets(@query_params)
       end
-      return rows if !@api_response || @api_response.empty?
+      # A nil response means catch_aws_errors swallowed something — an
+      # AccessDenied, or a coding error such as calling a client accessor
+      # AwsConnection does not define. Returning [] here would report an
+      # account with secrets as an account with none, and every control that
+      # scopes on `secrets_in_scope` would skip while looking clean. Not
+      # being able to look is not the same as there being nothing to see.
+      if @api_response.nil?
+        raise Inspec::Exceptions::ResourceFailed,
+              'aws_secretsmanager_secrets: list_secrets returned no response. The API call ' \
+              'failed and the error was suppressed — check credentials, region and ' \
+              'secretsmanager:ListSecrets permission. This is NOT an empty account.'
+      end
+      return rows if first && @api_response.secret_list.empty?
+      first = false
       @api_response.secret_list.each do |res|
         rows += [{
           arn: res.arn,
@@ -71,5 +103,19 @@ class AWSSecretsManagerSecrets < AwsResourceBase
       @query_params[:next_token] = @api_response.next_token
     end
     rows
+  end
+
+  private
+
+  # AwsConnection's <service>_client accessors are a CLOSED LIST whose contents
+  # vary by inspec-aws version: `main` defines ~60, the v1.21.0 tag this profile
+  # pins defines 25 — and secretsmanager_client is not among them. Calling it
+  # raises NoMethodError, which catch_aws_errors then swallows. aws_client(klass)
+  # is the supported escape hatch and is version-independent.
+  def secretsmanager_client
+    if SECRETSMANAGER_GEM_LOAD_ERROR
+      raise Inspec::Exceptions::ResourceFailed, SECRETSMANAGER_GEM_LOAD_ERROR
+    end
+    @aws.aws_client(Aws::SecretsManager::Client)
   end
 end

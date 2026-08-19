@@ -1,5 +1,23 @@
 require "aws_backend"
 
+# The `aws-sdk-secretsmanager` gem is not part of inspec-aws's default vendored
+# set, so `Aws::SecretsManager` is undefined at exec time even though the gem is
+# present in the image. Defensive require (per the aws_account_contact /
+# aws_workdocs_inventory pattern) so a missing gem degrades to a clear,
+# attributable failure instead of `uninitialized constant Aws::SecretsManager`.
+# Guarded so the three secretsmanager resources can each declare it without a
+# redefinition warning, whatever order the library files load in.
+unless defined?(SECRETSMANAGER_GEM_LOAD_ERROR)
+  SECRETSMANAGER_GEM_LOAD_ERROR = begin
+    require "aws-sdk-secretsmanager"
+    nil
+  rescue LoadError => e
+    "aws-sdk-secretsmanager gem not installed: #{e.message}. File a tracking " \
+      "issue against the cinc-auditor docker image to bundle the gem."
+  end
+end
+
+
 # Vendored from inspec-aws (Apache-2.0). The inspec-aws version this
 # profile resolves to no longer ships aws_secretsmanager_secret(s), so we
 # carry a local copy. describe_secret exposes rotation_enabled,
@@ -22,7 +40,7 @@ class AWSSecretsManagerSecret < AwsResourceBase
     raise ArgumentError, "#{@__resource_name__}: secret_id must be provided" unless opts[:secret_id] && !opts[:secret_id].empty?
     @display_name = opts[:secret_id]
     catch_aws_errors do
-      resp = @aws.secretsmanager_client.describe_secret({ secret_id: opts[:secret_id] })
+      resp = secretsmanager_client.describe_secret({ secret_id: opts[:secret_id] })
       # describe_secret omits fields that are unset (e.g. KmsKeyId for the
       # AWS-managed key, RotationEnabled for never-rotated secrets), so
       # create_resource_methods would not define those accessors and the
@@ -37,6 +55,15 @@ class AWSSecretsManagerSecret < AwsResourceBase
       }
       @res = defaults.merge(resp.to_h)
       create_resource_methods(@res)
+      # create_resource_methods does NOT define an accessor for a nil value, so
+      # merging nil-defaults above is not by itself enough — verified against a
+      # never-accessed secret, where `last_accessed_date` still raised
+      # NoMethodError. Define whatever it skipped, so every documented field
+      # answers nil instead of blowing up the control that reads it.
+      defaults.each_key do |field|
+        next if respond_to?(field)
+        define_singleton_method(field) { @res[field] }
+      end
     end
   end
 
@@ -55,5 +82,17 @@ class AWSSecretsManagerSecret < AwsResourceBase
 
   def to_s
     "Secret ID: #{@display_name}"
+  end
+
+  private
+
+  # See aws_secretsmanager_secrets: the <service>_client dispatcher is a closed
+  # list and does not include secretsmanager_client at the pinned inspec-aws
+  # version. aws_client(klass) is the supported, version-independent path.
+  def secretsmanager_client
+    if SECRETSMANAGER_GEM_LOAD_ERROR
+      raise Inspec::Exceptions::ResourceFailed, SECRETSMANAGER_GEM_LOAD_ERROR
+    end
+    @aws.aws_client(Aws::SecretsManager::Client)
   end
 end

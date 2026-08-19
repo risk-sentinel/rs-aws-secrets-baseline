@@ -1,5 +1,23 @@
 require "aws_backend"
 
+# The `aws-sdk-secretsmanager` gem is not part of inspec-aws's default vendored
+# set, so `Aws::SecretsManager` is undefined at exec time even though the gem is
+# present in the image. Defensive require (per the aws_account_contact /
+# aws_workdocs_inventory pattern) so a missing gem degrades to a clear,
+# attributable failure instead of `uninitialized constant Aws::SecretsManager`.
+# Guarded so the three secretsmanager resources can each declare it without a
+# redefinition warning, whatever order the library files load in.
+unless defined?(SECRETSMANAGER_GEM_LOAD_ERROR)
+  SECRETSMANAGER_GEM_LOAD_ERROR = begin
+    require "aws-sdk-secretsmanager"
+    nil
+  rescue LoadError => e
+    "aws-sdk-secretsmanager gem not installed: #{e.message}. File a tracking " \
+      "issue against the cinc-auditor docker image to bundle the gem."
+  end
+end
+
+
 # aws_secretsmanager_secret_policy — resource-policy + replication
 # introspection for a single Secrets Manager secret.
 #
@@ -9,9 +27,12 @@ require "aws_backend"
 # SEC-3.x resource-policy deep checks and SEC-4.1 replication check can
 # assert real configuration rather than presence alone.
 #
-# Uses @aws.secretsmanager_client — already enumerated in AwsConnection's
-# <service>_client dispatcher (the stock aws_secretsmanager_secret resource
-# uses the same), so no aws_client() escape hatch is required.
+# Uses the aws_client(Aws::SecretsManager::Client) escape hatch. An earlier
+# version of this comment asserted secretsmanager_client was enumerated in
+# AwsConnection's <service>_client dispatcher. It is not, at the inspec-aws
+# version this profile pins — the claim was never verified, and the resulting
+# NoMethodError was swallowed by catch_aws_errors, emptying the secret table
+# and skipping eleven controls against an account holding eight real secrets.
 #
 # Resource-policy statement analysis is delegated to the pure-Ruby
 # IamPolicyStatement module (ported from foundations #72).
@@ -83,7 +104,7 @@ class AwsSecretsManagerSecretPolicy < AwsResourceBase
   private
 
   def load_policy
-    resp = @aws.secretsmanager_client.get_resource_policy({ secret_id: @secret_id })
+    resp = secretsmanager_client.get_resource_policy({ secret_id: @secret_id })
     @exists = true
     @policy_json = resp.resource_policy
     return if @policy_json.nil?
@@ -91,8 +112,15 @@ class AwsSecretsManagerSecretPolicy < AwsResourceBase
   end
 
   def load_replication
-    resp = @aws.secretsmanager_client.describe_secret({ secret_id: @secret_id })
+    resp = secretsmanager_client.describe_secret({ secret_id: @secret_id })
     @exists = true
     @replica_regions = Array(resp.replication_status).map(&:region).compact
+  end
+
+  def secretsmanager_client
+    if SECRETSMANAGER_GEM_LOAD_ERROR
+      raise Inspec::Exceptions::ResourceFailed, SECRETSMANAGER_GEM_LOAD_ERROR
+    end
+    @aws.aws_client(Aws::SecretsManager::Client)
   end
 end

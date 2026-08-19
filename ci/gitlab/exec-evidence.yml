@@ -160,7 +160,29 @@ spec:
     # 6 — third gate.
     - hdf validate --type results results.final.json
 
-    # 7 — make the result readable in the job log, not only downloadable.
+    # 7 — the Heimdall copy.
+    #
+    # Heimdall loads the InSpec exec-json shape (`profiles[]`), which cinc-auditor
+    # already wrote in step 2 — so this is a carry-across, not a conversion.
+    #
+    # Version-namespace trap: in the Heimdall/SAF world "HDF" means this
+    # exec-json shape, but in hdf-libs 3.4.1 `--to hdf@2` IS the CLI default and
+    # emits `baselines[]`, which Heimdall does not take. `--to hdf@1` reaches the
+    # right shape but drops resource_class, resource_id, resource_params,
+    # attributes, sha256, depends and waiver_data. Copying what we already have
+    # loses nothing.
+    - |
+      set -euo pipefail
+      jq --slurpfile f results.final.json \
+         '.passthrough = ((.passthrough // {}) + {audit: $f[0].passthrough.audit})' \
+         results.json > results-heimdall.json
+      jq -e '[.profiles[]?.controls[]?.results[]?] | length > 0' results-heimdall.json >/dev/null \
+        || { echo "ERROR: Heimdall copy carries no results"; exit 1; }
+      jq -e '.passthrough.audit != null' results-heimdall.json >/dev/null \
+        || { echo "ERROR: audit record did not carry into the Heimdall copy"; exit 1; }
+      echo "Heimdall copy: $(jq '[.profiles[]?.controls[]?.results[]?] | length' results-heimdall.json) results, audit record carried"
+
+    # 8 — make the result readable in the job log, not only downloadable.
     - |
       echo "===== Compliance summary ====="
       saf view summary -i results.json || true
@@ -173,3 +195,4 @@ spec:
     expire_in: 90 days
     paths:
       - results.final.json
+      - results-heimdall.json

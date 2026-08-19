@@ -226,6 +226,34 @@ The guard in step 4 is not defensive padding.
 `aws://` run the converter emits a `host` component named `aws` — the InSpec
 backend, not your account. That is why steps 3 and 4 exist.
 
+### Two artifacts, and why
+
+| artifact | shape | for |
+|---|---|---|
+| `results.final.json` | HDF v3 (`baselines[]`) | the authoritative evidence — schema-validated, carries the audit record and typed target components, and is what `hdf convert --to oscal-sar` consumes |
+| `results-heimdall.json` | InSpec exec-json (`profiles[]`) | loading into Heimdall |
+
+The Heimdall copy is a **carry-across, not a conversion**: cinc-auditor's own
+`--reporter json` output is already the shape Heimdall loads, so the pipeline
+copies it and adds the audit record rather than converting anything. Verified by
+loading both shapes into a live Heimdall instance.
+
+**The version-namespace trap.** "HDF v2" means two different things, and reaching
+for the obvious flag gets you the wrong one:
+
+| | |
+|---|---|
+| Heimdall / SAF | "HDF" is the exec-json `profiles[]` shape — what Heimdall loads |
+| hdf-libs 3.4.1 | `--to hdf@2` **is the CLI default** and emits `baselines[]`; `--to hdf@1` emits the exec-json |
+
+So `hdf convert --to hdf@2 results.final.json` returns the input **byte for byte
+unchanged** — same sha256 — and produces nothing Heimdall will render.
+`--to hdf@1` does reach the right shape, but it is a lossy downgrade: measured,
+it strips `resource_class`, `resource_id` and `resource_params` from every
+result, and `attributes`, `sha256`, `depends` and `waiver_data` from the profile.
+
+Copying the artifact cinc-auditor already produced avoids both.
+
 ### What the audit record carries
 
 Target, scan window, scanner, profile and version, pipeline provenance, who

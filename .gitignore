@@ -18,3 +18,6 @@ results.*.json
 *.v3.json
 # saf-cli drops this beside whatever it is run against.
 saf-cli.log
+# staged by the CI evidence pipeline before the scan runs.
+audit.pre.json
+results-hdfv2.json

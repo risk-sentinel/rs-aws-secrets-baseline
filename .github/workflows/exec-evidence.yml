@@ -214,7 +214,33 @@ jobs:
       - name: Validate against the HDF schema
         run: hdf validate --type results results.final.json
 
-      # 7 — make the result readable in the log, not only downloadable.
+      # 7 — the Heimdall copy.
+      #
+      # Heimdall loads the InSpec exec-json shape (`profiles[]`), which is what
+      # cinc-auditor already wrote in step 2 — so this is a carry-across, not a
+      # conversion. Confirmed by loading both shapes into a live Heimdall.
+      #
+      # Note the version-namespace collision, because it is a trap: in the
+      # Heimdall/SAF world "HDF" means this exec-json shape, but in hdf-libs
+      # 3.4.1 `--to hdf@2` IS the CLI default and emits `baselines[]` — the
+      # schema Heimdall does not take. `--to hdf@1` reaches the right shape but
+      # is a lossy downgrade, measurably dropping resource_class, resource_id,
+      # resource_params, attributes, sha256, depends and waiver_data. Copying
+      # the artifact we already have loses nothing.
+      - name: Produce the Heimdall copy
+        run: |
+          set -euo pipefail
+          jq --slurpfile f results.final.json \
+             '.passthrough = ((.passthrough // {}) + {audit: $f[0].passthrough.audit})' \
+             results.json > results-heimdall.json
+          # An empty document would render in Heimdall as a clean scan.
+          jq -e '[.profiles[]?.controls[]?.results[]?] | length > 0' results-heimdall.json >/dev/null \
+            || { echo "::error::Heimdall copy carries no results"; exit 1; }
+          jq -e '.passthrough.audit != null' results-heimdall.json >/dev/null \
+            || { echo "::error::audit record did not carry into the Heimdall copy"; exit 1; }
+          echo "Heimdall copy: $(jq '[.profiles[]?.controls[]?.results[]?] | length' results-heimdall.json) results, audit record carried"
+
+      # 8 — make the result readable in the log, not only downloadable.
       - name: Display results
         run: |
           set -euo pipefail
@@ -237,5 +263,7 @@ jobs:
         if: always()
         with:
           name: ${{ inputs.profile_name }}-evidence
-          path: results.final.json
+          path: |
+            results.final.json
+            results-heimdall.json
           retention-days: 90

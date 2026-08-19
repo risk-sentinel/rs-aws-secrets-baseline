@@ -95,9 +95,6 @@ class AWSSecretsManagerSecrets < AwsResourceBase
   # raises NoMethodError, which catch_aws_errors then swallows. aws_client(klass)
   # is the supported escape hatch and is version-independent.
   def secretsmanager_client
-    if SECRETSMANAGER_GEM_LOAD_ERROR
-      raise Inspec::Exceptions::ResourceFailed, SECRETSMANAGER_GEM_LOAD_ERROR
-    end
     @aws.aws_client(Aws::SecretsManager::Client)
   end
 end

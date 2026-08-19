@@ -100,9 +100,6 @@ class AwsSecretsManagerSecretPolicy < AwsResourceBase
   end
 
   def secretsmanager_client
-    if SECRETSMANAGER_GEM_LOAD_ERROR
-      raise Inspec::Exceptions::ResourceFailed, SECRETSMANAGER_GEM_LOAD_ERROR
-    end
     @aws.aws_client(Aws::SecretsManager::Client)
   end
 end

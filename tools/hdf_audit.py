@@ -36,6 +36,7 @@ import hashlib
 import json
 import os
 import sys
+from pathlib import Path
 
 SCHEMA_VERSION = 1
 
@@ -52,12 +53,50 @@ CORROBORABLE = [
 ]
 
 
+def resolve_path(raw, must_exist=False):
+    """Resolve a CLI-supplied path, confined to the working tree.
+
+    Every path this tool touches comes from an argument, and it runs in CI
+    where those arguments are assembled from other variables. Confining them
+    to the working directory means a malformed or injected value fails loudly
+    here rather than reading or writing somewhere unintended.
+    """
+    base = Path.cwd().resolve()
+    candidate = Path(raw)
+    resolved = (candidate if candidate.is_absolute() else base / candidate).resolve()
+    if resolved != base and base not in resolved.parents:
+        raise SystemExit(f"refusing a path outside the working directory: {raw}")
+    if must_exist and not resolved.is_file():
+        raise SystemExit(f"not a readable file: {raw}")
+    return resolved
+
+
 def sha256_file(path):
     h = hashlib.sha256()
     with open(path, "rb") as fh:
         for chunk in iter(lambda: fh.read(65536), b""):
             h.update(chunk)
     return "sha256:" + h.hexdigest()
+
+
+STATUS_BUCKET = {"passed": "passed", "failed": "failed", "skipped": "skipped"}
+
+
+def iter_statuses(doc):
+    """Yield every result status, from either schema.
+
+    HDF v3 nests results under baselines[].requirements[]; the legacy schema
+    under profiles[].controls[]. A document can only be one, but walking both
+    keeps this readable and costs nothing.
+    """
+    for baseline in doc.get("baselines") or []:
+        for req in baseline.get("requirements") or []:
+            for res in req.get("results") or []:
+                yield res.get("status")
+    for profile in doc.get("profiles") or []:
+        for ctl in profile.get("controls") or []:
+            for res in ctl.get("results") or []:
+                yield res.get("status")
 
 
 def count_outcomes(doc):
@@ -69,23 +108,10 @@ def count_outcomes(doc):
     """
     buckets = {"total": 0, "passed": 0, "failed": 0, "skipped": 0, "not_applicable": 0}
     found = False
-
-    for baseline in doc.get("baselines") or []:
-        for req in baseline.get("requirements") or []:
-            for res in req.get("results") or []:
-                found = True
-                buckets["total"] += 1
-                buckets[{"passed": "passed", "failed": "failed",
-                         "skipped": "skipped"}.get(res.get("status"), "not_applicable")] += 1
-
-    for profile in doc.get("profiles") or []:
-        for ctl in profile.get("controls") or []:
-            for res in ctl.get("results") or []:
-                found = True
-                buckets["total"] += 1
-                buckets[{"passed": "passed", "failed": "failed",
-                         "skipped": "skipped"}.get(res.get("status"), "not_applicable")] += 1
-
+    for status in iter_statuses(doc):
+        found = True
+        buckets["total"] += 1
+        buckets[STATUS_BUCKET.get(status, "not_applicable")] += 1
     return buckets if found else None
 
 
@@ -134,6 +160,44 @@ def prune(obj):
     return obj
 
 
+def _digest(args, notes):
+    if not args.raw:
+        return None, None
+    path = resolve_path(args.raw, must_exist=False)
+    if not path.is_file():
+        notes.append(f"raw_digest unavailable: {args.raw} not found at audit time")
+        return os.path.basename(args.raw), None
+    return path.name, sha256_file(path)
+
+
+def _provenance(args):
+    env = os.environ.get
+    run_id = args.run_id or env("GITHUB_RUN_ID")
+    repo = args.repo or env("GITHUB_REPOSITORY")
+    server = env("GITHUB_SERVER_URL", "https://github.com")
+    return {
+        "forge": args.forge,
+        "repo": repo,
+        "commit": args.commit or env("GITHUB_SHA"),
+        "ref": args.ref or env("GITHUB_REF"),
+        "pipeline_sha": env("GITHUB_WORKFLOW_SHA"),
+        "workflow": env("GITHUB_WORKFLOW"),
+        "run_id": run_id,
+        "run_attempt": env("GITHUB_RUN_ATTEMPT"),
+        "run_url": f"{server}/{repo}/actions/runs/{run_id}" if repo and run_id else None,
+    }
+
+
+def _assessment(args):
+    return {
+        "profile": args.profile_name,
+        "profile_version": args.profile_version,
+        "profile_sha": args.profile_sha or os.environ.get("GITHUB_SHA"),
+        "benchmark": args.benchmark,
+        "benchmark_version": args.benchmark_version,
+    }
+
+
 def build(args, doc):
     notes = []
 
@@ -144,20 +208,8 @@ def build(args, doc):
             "baselines[] nor profiles[]"
         )
 
-    raw_digest = None
-    if args.raw:
-        if os.path.isfile(args.raw):
-            raw_digest = sha256_file(args.raw)
-        else:
-            notes.append(f"raw_digest unavailable: {args.raw} not found at audit time")
-
-    env = os.environ.get
-    run_id = args.run_id or env("GITHUB_RUN_ID")
-    repo = args.repo or env("GITHUB_REPOSITORY")
-    server = env("GITHUB_SERVER_URL", "https://github.com")
-    run_url = None
-    if repo and run_id:
-        run_url = f"{server}/{repo}/actions/runs/{run_id}"
+    raw_name, raw_digest = _digest(args, notes)
+    generator = doc.get("generator") or {}
 
     audit = {
         "schema_version": SCHEMA_VERSION,
@@ -173,33 +225,17 @@ def build(args, doc):
             "finished_at": args.finished_at,
         },
         "scanner": derive_tool(doc),
-        "assessment": {
-            "profile": args.profile_name,
-            "profile_version": args.profile_version,
-            "profile_sha": args.profile_sha or env("GITHUB_SHA"),
-            "benchmark": args.benchmark,
-            "benchmark_version": args.benchmark_version,
-        },
-        "provenance": {
-            "forge": args.forge,
-            "repo": repo,
-            "commit": args.commit or env("GITHUB_SHA"),
-            "ref": args.ref or env("GITHUB_REF"),
-            "pipeline_sha": env("GITHUB_WORKFLOW_SHA"),
-            "workflow": env("GITHUB_WORKFLOW"),
-            "run_id": run_id,
-            "run_attempt": env("GITHUB_RUN_ATTEMPT"),
-            "run_url": run_url,
-        },
+        "assessment": _assessment(args),
+        "provenance": _provenance(args),
         "actor": {
-            "triggered_by": args.actor or env("GITHUB_ACTOR"),
-            "trigger": args.trigger or env("GITHUB_EVENT_NAME"),
+            "triggered_by": args.actor or os.environ.get("GITHUB_ACTOR"),
+            "trigger": args.trigger or os.environ.get("GITHUB_EVENT_NAME"),
             "runner_identity": args.runner_identity,
         },
         "conversion": {
-            "converter": (doc.get("generator") or {}).get("name"),
-            "converter_version": (doc.get("generator") or {}).get("version"),
-            "raw_artifact": os.path.basename(args.raw) if args.raw else None,
+            "converter": generator.get("name"),
+            "converter_version": generator.get("version"),
+            "raw_artifact": raw_name,
             "raw_digest": raw_digest,
         },
         "outcome": outcome,
@@ -257,7 +293,8 @@ def main():
     ap.add_argument("--evidence-key")
     args = ap.parse_args()
 
-    with open(args.hdf) as fh:
+    hdf_path = resolve_path(args.hdf, must_exist=True)
+    with open(hdf_path) as fh:
         doc = json.load(fh)
 
     audit = build(args, doc)
@@ -273,7 +310,7 @@ def main():
                              **flat_labels(audit)}
     doc["passthrough"] = passthrough
 
-    out = args.out or args.hdf
+    out = resolve_path(args.out, must_exist=False) if args.out else hdf_path
     with open(out, "w") as fh:
         json.dump(doc, fh, indent=2)
 

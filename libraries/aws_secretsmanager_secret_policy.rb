@@ -1,23 +1,5 @@
 require "aws_backend"
 
-# The `aws-sdk-secretsmanager` gem is not part of inspec-aws's default vendored
-# set, so `Aws::SecretsManager` is undefined at exec time even though the gem is
-# present in the image. Defensive require (per the aws_account_contact /
-# aws_workdocs_inventory pattern) so a missing gem degrades to a clear,
-# attributable failure instead of `uninitialized constant Aws::SecretsManager`.
-# Guarded so the three secretsmanager resources can each declare it without a
-# redefinition warning, whatever order the library files load in.
-unless defined?(SECRETSMANAGER_GEM_LOAD_ERROR)
-  SECRETSMANAGER_GEM_LOAD_ERROR = begin
-    require "aws-sdk-secretsmanager"
-    nil
-  rescue LoadError => e
-    "aws-sdk-secretsmanager gem not installed: #{e.message}. File a tracking " \
-      "issue against the cinc-auditor docker image to bundle the gem."
-  end
-end
-
-
 # aws_secretsmanager_secret_policy — resource-policy + replication
 # introspection for a single Secrets Manager secret.
 #

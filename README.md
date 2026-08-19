@@ -235,8 +235,15 @@ backend, not your account. That is why steps 3 and 4 exist.
 
 The Heimdall copy is a **carry-across, not a conversion**: cinc-auditor's own
 `--reporter json` output is already the shape Heimdall loads, so the pipeline
-copies it and adds the audit record rather than converting anything. Verified by
-loading both shapes into a live Heimdall instance.
+copies it and adds the audit record rather than converting anything.
+
+Verified against a live Heimdall instance. Every `profiles[]` variant loads —
+cinc-auditor's native output, the carry-across, and the outputs of
+`--to hdf@1` and `--to hdf@2` alike. Shape is therefore **not** what
+distinguishes them, so the choice comes down to fidelity, and the carry-across
+is the only one that loses nothing (see the table below). The `baselines[]` v3
+document is the one Heimdall does not take, which is why two artifacts are
+produced rather than one.
 
 **The version-namespace trap — and it moved.** "HDF v2" means two different
 things, and which one you get depends on the CLI version:

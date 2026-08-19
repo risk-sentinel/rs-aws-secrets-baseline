@@ -10,3 +10,14 @@ exec-*.json
 *.hdf.json
 trufflehog.json
 /out/
+# The README's evidence pipeline writes these by name. Results for this profile
+# carry secret ARNs (which embed the account id), so they must never be
+# committed by a copy-paste of the quickstart.
+results.json
+results.*.json
+*.v3.json
+# saf-cli drops this beside whatever it is run against.
+saf-cli.log
+# staged by the CI evidence pipeline before the scan runs.
+audit.pre.json
+results-hdfv2.json

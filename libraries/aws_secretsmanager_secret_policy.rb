@@ -9,9 +9,12 @@ require "aws_backend"
 # SEC-3.x resource-policy deep checks and SEC-4.1 replication check can
 # assert real configuration rather than presence alone.
 #
-# Uses @aws.secretsmanager_client — already enumerated in AwsConnection's
-# <service>_client dispatcher (the stock aws_secretsmanager_secret resource
-# uses the same), so no aws_client() escape hatch is required.
+# Uses the aws_client(Aws::SecretsManager::Client) escape hatch. An earlier
+# version of this comment asserted secretsmanager_client was enumerated in
+# AwsConnection's <service>_client dispatcher. It is not, at the inspec-aws
+# version this profile pins — the claim was never verified, and the resulting
+# NoMethodError was swallowed by catch_aws_errors, emptying the secret table
+# and skipping eleven controls against an account holding eight real secrets.
 #
 # Resource-policy statement analysis is delegated to the pure-Ruby
 # IamPolicyStatement module (ported from foundations #72).
@@ -83,7 +86,7 @@ class AwsSecretsManagerSecretPolicy < AwsResourceBase
   private
 
   def load_policy
-    resp = @aws.secretsmanager_client.get_resource_policy({ secret_id: @secret_id })
+    resp = secretsmanager_client.get_resource_policy({ secret_id: @secret_id })
     @exists = true
     @policy_json = resp.resource_policy
     return if @policy_json.nil?
@@ -91,8 +94,12 @@ class AwsSecretsManagerSecretPolicy < AwsResourceBase
   end
 
   def load_replication
-    resp = @aws.secretsmanager_client.describe_secret({ secret_id: @secret_id })
+    resp = secretsmanager_client.describe_secret({ secret_id: @secret_id })
     @exists = true
     @replica_regions = Array(resp.replication_status).map(&:region).compact
+  end
+
+  def secretsmanager_client
+    @aws.aws_client(Aws::SecretsManager::Client)
   end
 end

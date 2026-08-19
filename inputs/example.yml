@@ -1,0 +1,105 @@
+# =============================================================================
+# rs-aws-secrets-baseline — reference inputs
+#
+# Copy this file, edit the values, and pass it explicitly:
+#
+#   cinc-auditor exec . -t aws:// --input-file inputs/mine.yml
+#
+# cinc-auditor does NOT auto-load a profile-root inputs file. Without
+# --input-file every value below falls back to the default declared in
+# inspec.yml, which is not always the one you want.
+#
+# ---- How to read this file --------------------------------------------------
+#
+# Every input the profile declares appears here, including the ones you will
+# probably not change. An input you cannot see is an input you cannot reason
+# about, and "I did not set this" and "this does not apply to me" must never be
+# the same state.
+#
+# Each entry says what an EMPTY or unset value means, because for several of
+# these the answer is "the control scopes itself out" rather than "the control
+# fails" — and a run full of quiet skips looks exactly like a clean run.
+#
+# Inputs are grouped as:
+#   REQUIRED TO RUN   nothing works correctly without a deliberate value
+#   SCOPING           decides which controls apply to you
+#   ALLOW-LIST        deliberately empty until you have something to exempt
+#   ATTESTATION       points at evidence for checks no API can answer
+# =============================================================================
+
+# ---- REQUIRED TO RUN --------------------------------------------------------
+
+# Which AWS partition you are scanning. Controls carry
+# `tag applicable_partitions:` and per-control applicability is documented in
+# partition_applicability.yml.
+#   aws         AWS Commercial
+#   aws-us-gov  AWS GovCloud (non-DoD)
+aws_partition: aws
+
+# ---- SCOPING — these decide what applies ------------------------------------
+
+# Maximum allowed rotation interval, and the maximum age of the last rotation
+# (IA-5(1)). Secrets rotating less often than this fail SEC-1.2 / SEC-1.3.
+max_rotation_days: 90
+
+# When true, secrets must use a customer-managed KMS CMK rather than the
+# AWS-managed `aws/secretsmanager` key (SC-12).
+# Set false if your organisation accepts the AWS-managed key — that is a risk
+# acceptance, and SEC-2.1 will scope itself out rather than fail.
+require_cmk: true
+
+# Secrets not accessed within this many days are flagged as stale (AC-2(3)).
+# Never-accessed and newly created secrets are NOT flagged — absence of an
+# access record is not evidence of disuse.
+stale_days: 90
+
+# Require an interface VPC endpoint for Secrets Manager (SC-7), so credential
+# retrieval from inside the VPC does not traverse the public AWS endpoint.
+# Set false only if your workloads do not run in a VPC.
+require_vpc_endpoint: true
+
+# ---- ALLOW-LISTS — empty on purpose until you have an exemption -------------
+
+# Governance tag keys every secret must carry (CM-8).
+# EMPTY = every secret must carry at least one non-system tag, but no specific
+# key is demanded. Populate it to enforce your own tagging standard.
+#   required_tag_keys: [Owner, Environment, DataClassification]
+required_tag_keys: []
+
+# ARNs of DR-critical secrets that must be replicated to a second region (CP-9).
+# EMPTY = SEC-4.1 is NOT APPLICABLE — the profile cannot infer which of your
+# secrets are DR-critical, and guessing would be worse than not answering.
+# This is the input most likely to leave a control silently unassessed.
+dr_critical_secret_arns: []
+
+# Secret ARNs exempt from the resource-policy public-access check (SEC-3.1).
+# EMPTY = no exemptions, which is the correct starting position. Every entry
+# here is a documented risk acceptance.
+secret_arn_allowlist: []
+
+# ---- ATTESTATION — evidence for what no API can answer ----------------------
+#
+# These resolve document attestations for controls that cannot be assessed by
+# an API call. Left empty, the control SKIPS with a rationale rather than
+# passing — a skip you can attest to, not a silent gap.
+
+# Evidence reference for the BlockPublicPolicy guardrail attestation (SEC-3.3).
+block_public_policy_attestation_ref: ''
+
+# Base URI for leveraged-SYSTEM authorizations (FedRAMP / SOC 2 / ISO) that
+# your boundary inherits. No inherited controls in this profile today.
+leveraged_evidence_base: ''
+
+# Base URI for policy-PROVIDER documents your boundary leverages.
+policy_provider_base: ''
+
+# Base URI for your boundary's OWN governance documents — e.g. the SEC-3.3
+# BlockPublicPolicy SCP or identity-policy guardrail attestation.
+boundary_docs_base: ''
+
+# Direct URI override for the SEC-3.3 attestation.
+# EMPTY = resolved from boundary_docs_base; if that is empty too, SEC-3.3 skips.
+sec_3_3_attestation_uri: ''
+
+# How old the SEC-3.3 attestation may be before it stops counting as current.
+attestation_max_age_days: 365

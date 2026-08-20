@@ -21,3 +21,9 @@ saf-cli.log
 # staged by the CI evidence pipeline before the scan runs.
 audit.pre.json
 results-hdfv2.json
+
+# Artifacts the evidence pipeline and its quickstart create. Scan output
+# can contain the very thing a scan exists to find, so none of it is
+# committed by a copy-paste of the README.
+results-heimdall.json
+results.normalized.json

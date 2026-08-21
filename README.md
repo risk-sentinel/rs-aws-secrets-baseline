@@ -1,6 +1,6 @@
 # rs-aws-secrets-baseline
 
-[![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=risk-sentinel_aws-secrets-baseline)](https://sonarcloud.io/summary/new_code?id=risk-sentinel_aws-secrets-baseline)
+[![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=risk-sentinel_rs-aws-secrets-baseline)](https://sonarcloud.io/summary/new_code?id=risk-sentinel_rs-aws-secrets-baseline)
 
 InSpec baseline for **AWS Secrets Manager** — 14 controls covering rotation,
 encryption, resource-policy exposure, replication, governance tagging, audit

@@ -187,7 +187,7 @@ jq --arg started "$STARTED_AT" \
    ([.baselines[]?.requirements[]?.results[]?.status]) as $st
    | .passthrough.audit = {
        schema_version: 1,
-       target: {id: $target, type: "cloudAccount", boundary: "sparc"},
+       target: {id: $target, type: "cloudAccount", boundary: "my-boundary"},
        scan:   {type: "runtime", started_at: $started, finished_at: $finished},
        scanner: {name: "rs-aws-secrets-v1r1", version: "0.1.0"},
        conversion: {converter: (.generator.name // null),

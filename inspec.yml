@@ -76,7 +76,7 @@ inputs:
     type: string
     value: ''
     description: Evidence reference for the BlockPublicPolicy guardrail attestation.
-  # ---- document_attestation evidence-class bases (sparc-validate#154) ----
+  # ---- document_attestation evidence-class bases ----
   - name: leveraged_evidence_base
     type: string
     value: ''

@@ -93,7 +93,7 @@ control "SEC-3.3" do
 
   # BlockPublicPolicy guardrail is an account/SCP/identity-policy control with no
   # per-secret API surface (SEC-3.1 gives detective coverage). Converted to
-  # Pass-with-evidence via document_attestation (sparc-validate#154): the SCP /
+  # Pass-with-evidence via document_attestation: the SCP /
   # identity-policy attestation is a `boundary`-class doc. Resolves to the
   # sec_3_3_attestation_uri override, else attestation_uri(:boundary, 'SEC-3.3');
   # empty -> Skip (preserves the prior attestation + saf attest apply fallback).

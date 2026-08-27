@@ -62,7 +62,7 @@ controls**, in a few seconds.
 that assesses nothing exits 0 and looks clean. The specific shape to watch for
 is a wave of `No customer-owned Secrets Manager secrets in scope` skips on an
 account that definitely has secrets — that meant a swallowed API error for the
-entire life of this profile before it was found (#12). Cross-check with:
+entire life of this profile before it was found. Cross-check with:
 
 ```bash
 aws secretsmanager list-secrets --query 'length(SecretList)'
@@ -308,7 +308,7 @@ Two properties are deliberate:
   `actor.triggered_by` are self-asserted. An audit chain where every field is
   self-asserted is a story, and the record says which is which.
 
-Schema authority: [dev-sec-ops-baseline#33](https://github.com/risk-sentinel/dev-sec-ops-baseline/issues/33).
+Schema authority: the shared evidence-store schema.
 
 ## Consuming this profile
 

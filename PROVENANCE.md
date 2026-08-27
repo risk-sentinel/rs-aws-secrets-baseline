@@ -40,4 +40,3 @@ an AWS‑native control exists, a `tag fsbp:`.
   container one.
 - Keep this doc in sync when controls are added/removed or re-anchored.
 
-_Closes #3._

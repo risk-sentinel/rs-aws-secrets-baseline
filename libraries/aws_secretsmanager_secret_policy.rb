@@ -17,7 +17,7 @@ require "aws_backend"
 # and skipping eleven controls against an account holding eight real secrets.
 #
 # Resource-policy statement analysis is delegated to the pure-Ruby
-# IamPolicyStatement module (ported from foundations #72).
+# IamPolicyStatement module (ported from the AWS Foundations baseline).
 class AwsSecretsManagerSecretPolicy < AwsResourceBase
   name "aws_secretsmanager_secret_policy"
   desc "Resource policy and replication posture for a Secrets Manager secret."

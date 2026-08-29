@@ -12,6 +12,7 @@ control "SEC-2.1" do
   tag severity:              "medium"
   tag severity_source:       "unassessed"
   tag nist:                  ["SC-28", "SC-12"]
+  tag ksi:                   ["KSI-SVC-ASM", "KSI-SVC-SIN"]
   tag nist_r4:               ["SC-28 (1)"]
   tag cci:                   ["CCI-002475"]
   tag local_number:          "SEC-2.1"
@@ -45,6 +46,7 @@ control "SEC-2.2" do
   tag severity:              "medium"
   tag severity_source:       "unassessed"
   tag nist:                  ["SC-12", "SC-12 (2)"]
+  tag ksi:                   ["KSI-SVC-ASM"]
   tag nist_r4:               ["SC-12", "SC-12 (2)"]
   tag cci:                   ["CCI-002428", "CCI-002443"]
   tag local_number:          "SEC-2.2"
@@ -76,6 +78,7 @@ control "SEC-2.3" do
   tag severity:              "medium"
   tag severity_source:       "unassessed"
   tag nist:                  ["SC-13"]
+  tag ksi:                   ["KSI-SVC-SIN", "KSI-SVC-VRI"]
   tag nist_r4:               ["SC-13"]
   tag cci:                   ["CCI-002450"]
   tag local_number:          "SEC-2.3"

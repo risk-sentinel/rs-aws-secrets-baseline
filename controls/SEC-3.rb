@@ -12,6 +12,7 @@ control "SEC-3.1" do
   tag severity:              "high"
   tag severity_source:       "assessed"
   tag nist:                  ["AC-3", "AC-6"]
+  tag ksi:                   ["KSI-IAM-APM", "KSI-IAM-ELP", "KSI-IAM-JIT"]
   tag nist_r4:               ["AC-3", "AC-6"]
   tag cci:                   ["CCI-000213", "CCI-000225"]
   tag local_number:          "SEC-3.1"
@@ -47,6 +48,7 @@ control "SEC-3.2" do
   tag severity:              "medium"
   tag severity_source:       "unassessed"
   tag nist:                  ["SC-8", "SC-8 (1)"]
+  tag ksi:                   ["KSI-CNA-MAT", "KSI-CNA-ULN", "KSI-SVC-SIN"]
   tag nist_r4:               ["SC-8"]
   tag cci:                   ["CCI-002418"]
   tag local_number:          "SEC-3.2"
@@ -89,6 +91,7 @@ control "SEC-3.3" do
   tag severity:              "medium"
   tag severity_source:       "unassessed"
   tag nist:                  ["AC-3", "AC-6"]
+  tag ksi:                   ["KSI-IAM-APM", "KSI-IAM-ELP", "KSI-IAM-JIT"]
   tag nist_r4:               ["AC-3", "AC-6"]
   tag cci:                   ["CCI-000213", "CCI-000225"]
   tag local_number:          "SEC-3.3"

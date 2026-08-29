@@ -10,6 +10,7 @@ control "SEC-2.1" do
        "cross-account access and key-policy control require a customer-managed "\
        "CMK. When require_cmk is true, assert a non-default CMK is in use."
   tag severity:              "medium"
+  tag severity_source:       "unassessed"
   tag nist:                  ["SC-28", "SC-12"]
   tag cci:                   ["CCI-002475"]
   tag local_number:          "SEC-2.1"

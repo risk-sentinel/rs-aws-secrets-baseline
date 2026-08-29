@@ -8,6 +8,7 @@ control "SEC-6.1" do
        "auditable. At least one multi-region CloudTrail trail must be logging "\
        "and capturing global/management events."
   tag severity:              "medium"
+  tag severity_source:       "unassessed"
   tag nist:                  ["AU-2", "AU-12"]
   tag cci:                   ["CCI-000172"]
   tag local_number:          "SEC-6.1"

@@ -8,6 +8,7 @@ control "SEC-5.1" do
        "required_tag_keys is set, every listed key must be present; when "\
        "empty, at least one non-system tag must exist."
   tag severity:              "low"
+  tag severity_source:       "assessed"
   tag nist:                  ["CM-8"]
   tag cci:                   ["CCI-000366"]
   tag local_number:          "SEC-5.1"

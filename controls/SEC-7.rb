@@ -8,6 +8,7 @@ control "SEC-7.1" do
        "(PrivateLink) for Secrets Manager keeps secret retrieval off the "\
        "public internet. Gated on require_vpc_endpoint."
   tag severity:              "medium"
+  tag severity_source:       "unassessed"
   tag nist:                  ["SC-7", "AC-17"]
   tag cci:                   ["CCI-001097"]
   tag local_number:          "SEC-7.1"

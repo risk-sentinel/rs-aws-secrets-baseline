@@ -10,6 +10,7 @@ control "SEC-3.1" do
        "makes a secret effectively public. The deep check parses each "\
        "statement. ARNs in secret_arn_allowlist are exempt."
   tag severity:              "high"
+  tag severity_source:       "assessed"
   tag nist:                  ["AC-3", "AC-6"]
   tag cci:                   ["CCI-000366"]
   tag local_number:          "SEC-3.1"

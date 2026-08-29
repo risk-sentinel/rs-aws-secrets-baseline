@@ -9,6 +9,7 @@ control "SEC-4.1" do
        "in dr_critical_secret_arns are in scope; cross-partition replication "\
        "into GovCloud is not supported and is treated as N/A."
   tag severity:              "medium"
+  tag severity_source:       "unassessed"
   tag nist:                  ["CP-9"]
   tag cci:                   ["CCI-000535"]
   tag local_number:          "SEC-4.1"

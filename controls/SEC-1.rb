@@ -7,6 +7,7 @@ control "SEC-1.1" do
   desc "Long-lived static secrets are more likely to be compromised. "\
        "Automatic rotation limits the window of exposure."
   tag severity:              "medium"
+  tag severity_source:       "unassessed"
   tag nist:                  ["IA-5 (1)"]
   tag cci:                   ["CCI-002361"]
   tag local_number:          "SEC-1.1"

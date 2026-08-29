@@ -10,6 +10,7 @@ control "SEC-5.1" do
   tag severity:              "low"
   tag severity_source:       "assessed"
   tag nist:                  ["CM-8"]
+  tag nist_r4:               ["CM-8"]
   tag ksi:                   ["KSI-PIY-GIV"]
   tag cci:                   ["CCI-003967"]
   tag local_number:          "SEC-5.1"

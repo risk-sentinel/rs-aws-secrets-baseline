@@ -46,6 +46,7 @@ control "SEC-5.2" do
   desc "Secrets not accessed within stale_days are candidates for removal to "\
        "reduce the attack surface. Never-accessed/new secrets are not flagged."
   tag severity:              "low"
+  tag severity_source:       "assessed"
   tag nist:                  ["AC-2 (3)"]
   tag cci:                   ["CCI-000017"]
   tag local_number:          "SEC-5.2"

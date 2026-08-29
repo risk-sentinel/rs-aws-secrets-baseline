@@ -44,6 +44,7 @@ control "SEC-3.2" do
        "aws:SecureTransport=false. Secrets with no resource policy rely on "\
        "the Secrets Manager TLS-only endpoints (AWS-inherited) and are N/A."
   tag severity:              "medium"
+  tag severity_source:       "unassessed"
   tag nist:                  ["SC-8", "SC-8 (1)"]
   tag cci:                   ["CCI-002418"]
   tag local_number:          "SEC-3.2"
@@ -84,8 +85,9 @@ control "SEC-3.3" do
        "coverage of any policy that did become public; this control attests "\
        "the preventive guardrail is in place."
   tag severity:              "medium"
+  tag severity_source:       "unassessed"
   tag nist:                  ["AC-3", "AC-6"]
-  tag cci:                   ["CCI-000366"]
+  tag cci:                   ["CCI-000213", "CCI-000225"]
   tag local_number:          "SEC-3.3"
   tag fsbp:                  "SecretsManager (BlockPublicPolicy)"
   tag applicable_partitions: ["aws", "aws-us-gov"]

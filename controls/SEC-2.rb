@@ -42,8 +42,9 @@ control "SEC-2.2" do
   desc "A customer-managed CMK used to encrypt secrets should itself rotate. "\
        "Secrets on the AWS-managed key are skipped (AWS-rotated)."
   tag severity:              "medium"
+  tag severity_source:       "unassessed"
   tag nist:                  ["SC-12", "SC-12 (2)"]
-  tag cci:                   ["CCI-001967"]
+  tag cci:                   ["CCI-002428", "CCI-002443"]
   tag local_number:          "SEC-2.2"
   tag applicable_partitions: ["aws", "aws-us-gov"]
   tag implementation_status: "implemented"
@@ -71,6 +72,7 @@ control "SEC-2.3" do
        "control is ensuring a KMS key is in use. Passes with the CMK-in-use "\
        "proxy assertion plus the AWS validation evidence."
   tag severity:              "medium"
+  tag severity_source:       "unassessed"
   tag nist:                  ["SC-13"]
   tag cci:                   ["CCI-002450"]
   tag local_number:          "SEC-2.3"

@@ -8,8 +8,8 @@ control "SEC-1.1" do
        "Automatic rotation limits the window of exposure."
   tag severity:              "medium"
   tag severity_source:       "unassessed"
-  tag nist:                  ["IA-5 (1)"]
-  tag cci:                   ["CCI-002361"]
+  tag nist:                  ["SC-28"]
+  tag cci:                   ["CCI-001199"]
   tag local_number:          "SEC-1.1"
   tag fsbp:                  "SecretsManager.1"
   tag baseline:              "Risk Sentinel AWS Secrets Manager Baseline"
@@ -33,6 +33,7 @@ control "SEC-1.2" do
   title "Secret rotation interval must be within the maximum allowed window"
   desc "Rotation must occur at least as often as policy requires."
   tag severity:              "medium"
+  tag severity_source:       "unassessed"
   tag nist:                  ["IA-5 (1) (e)"]
   tag cci:                   ["CCI-002041"]
   tag local_number:          "SEC-1.2"
@@ -70,8 +71,9 @@ control "SEC-1.3" do
   desc "A rotation schedule that never fires provides no protection; assert "\
        "the last successful rotation is recent enough."
   tag severity:              "medium"
-  tag nist:                  ["IA-5 (1)"]
-  tag cci:                   ["CCI-002361"]
+  tag severity_source:       "unassessed"
+  tag nist:                  ["SC-28"]
+  tag cci:                   ["CCI-001199"]
   tag local_number:          "SEC-1.3"
   tag fsbp:                  "SecretsManager.2"
   tag applicable_partitions: ["aws", "aws-us-gov"]

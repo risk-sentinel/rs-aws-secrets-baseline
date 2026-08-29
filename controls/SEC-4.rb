@@ -11,6 +11,7 @@ control "SEC-4.1" do
   tag severity:              "medium"
   tag severity_source:       "unassessed"
   tag nist:                  ["CP-9"]
+  tag nist_r4:               ["CP-9 (a)"]
   tag cci:                   ["CCI-000535"]
   tag local_number:          "SEC-4.1"
   tag fsbp:                  "SecretsManager.replication"

@@ -10,6 +10,7 @@ control "SEC-6.1" do
   tag severity:              "medium"
   tag severity_source:       "unassessed"
   tag nist:                  ["AU-2", "AU-12"]
+  tag nist_r4:               ["AU-12 c"]
   tag cci:                   ["CCI-000172"]
   tag local_number:          "SEC-6.1"
   tag srg:                   "SRG-OS-000342-CLD-000020"

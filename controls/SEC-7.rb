@@ -10,6 +10,7 @@ control "SEC-7.1" do
   tag severity:              "medium"
   tag severity_source:       "unassessed"
   tag nist:                  ["SC-7", "AC-17"]
+  tag nist_r4:               ["SC-7 a"]
   tag cci:                   ["CCI-001097"]
   tag local_number:          "SEC-7.1"
   tag srg:                   "SRG-NET-000205-CLD-000085"

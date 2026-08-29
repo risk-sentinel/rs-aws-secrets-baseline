@@ -12,6 +12,7 @@ control "SEC-3.1" do
   tag severity:              "high"
   tag severity_source:       "assessed"
   tag nist:                  ["AC-3", "AC-6"]
+  tag nist_r4:               ["AC-3", "AC-6"]
   tag cci:                   ["CCI-000213", "CCI-000225"]
   tag local_number:          "SEC-3.1"
   tag srg:                   "SRG-OS-000001-CLD-000010"
@@ -46,6 +47,7 @@ control "SEC-3.2" do
   tag severity:              "medium"
   tag severity_source:       "unassessed"
   tag nist:                  ["SC-8", "SC-8 (1)"]
+  tag nist_r4:               ["SC-8"]
   tag cci:                   ["CCI-002418"]
   tag local_number:          "SEC-3.2"
   tag srg:                   "SRG-OS-000033-CLD-000115"
@@ -87,6 +89,7 @@ control "SEC-3.3" do
   tag severity:              "medium"
   tag severity_source:       "unassessed"
   tag nist:                  ["AC-3", "AC-6"]
+  tag nist_r4:               ["AC-3", "AC-6"]
   tag cci:                   ["CCI-000213", "CCI-000225"]
   tag local_number:          "SEC-3.3"
   tag fsbp:                  "SecretsManager (BlockPublicPolicy)"

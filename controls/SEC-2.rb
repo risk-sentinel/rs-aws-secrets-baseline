@@ -12,6 +12,7 @@ control "SEC-2.1" do
   tag severity:              "medium"
   tag severity_source:       "unassessed"
   tag nist:                  ["SC-28", "SC-12"]
+  tag nist_r4:               ["SC-28 (1)"]
   tag cci:                   ["CCI-002475"]
   tag local_number:          "SEC-2.1"
   tag srg:                   "SRG-OS-000404-CLD-000080"
@@ -44,6 +45,7 @@ control "SEC-2.2" do
   tag severity:              "medium"
   tag severity_source:       "unassessed"
   tag nist:                  ["SC-12", "SC-12 (2)"]
+  tag nist_r4:               ["SC-12", "SC-12 (2)"]
   tag cci:                   ["CCI-002428", "CCI-002443"]
   tag local_number:          "SEC-2.2"
   tag applicable_partitions: ["aws", "aws-us-gov"]
@@ -74,6 +76,7 @@ control "SEC-2.3" do
   tag severity:              "medium"
   tag severity_source:       "unassessed"
   tag nist:                  ["SC-13"]
+  tag nist_r4:               ["SC-13"]
   tag cci:                   ["CCI-002450"]
   tag local_number:          "SEC-2.3"
   tag srg:                   "SRG-OS-000404-CLD-000080"

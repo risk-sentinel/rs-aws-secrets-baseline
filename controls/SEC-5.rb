@@ -48,6 +48,7 @@ control "SEC-5.2" do
   tag severity:              "low"
   tag severity_source:       "assessed"
   tag nist:                  ["AC-2 (3)"]
+  tag nist_r4:               ["AC-2 (3)"]
   tag cci:                   ["CCI-000017"]
   tag local_number:          "SEC-5.2"
   tag fsbp:                  "SecretsManager.3"

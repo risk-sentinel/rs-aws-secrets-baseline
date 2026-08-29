@@ -9,6 +9,7 @@ control "SEC-1.1" do
   tag severity:              "medium"
   tag severity_source:       "unassessed"
   tag nist:                  ["SC-28"]
+  tag nist_r4:               ["SC-28"]
   tag cci:                   ["CCI-001199"]
   tag local_number:          "SEC-1.1"
   tag fsbp:                  "SecretsManager.1"
@@ -35,6 +36,7 @@ control "SEC-1.2" do
   tag severity:              "medium"
   tag severity_source:       "unassessed"
   tag nist:                  ["IA-5 (1) (e)"]
+  tag nist_r4:               ["IA-5 (1) (f)"]
   tag cci:                   ["CCI-002041"]
   tag local_number:          "SEC-1.2"
   tag fsbp:                  "SecretsManager.4"
@@ -73,6 +75,7 @@ control "SEC-1.3" do
   tag severity:              "medium"
   tag severity_source:       "unassessed"
   tag nist:                  ["SC-28"]
+  tag nist_r4:               ["SC-28"]
   tag cci:                   ["CCI-001199"]
   tag local_number:          "SEC-1.3"
   tag fsbp:                  "SecretsManager.2"

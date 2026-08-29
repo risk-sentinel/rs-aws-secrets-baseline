@@ -10,7 +10,10 @@ control "SEC-2.1" do
        "cross-account access and key-policy control require a customer-managed "\
        "CMK. When require_cmk is true, assert a non-default CMK is in use."
   tag severity:              "medium"
+  tag severity_source:       "unassessed"
   tag nist:                  ["SC-28", "SC-12"]
+  tag ksi:                   ["KSI-SVC-ASM", "KSI-SVC-SIN"]
+  tag nist_r4:               ["SC-28 (1)"]
   tag cci:                   ["CCI-002475"]
   tag local_number:          "SEC-2.1"
   tag srg:                   "SRG-OS-000404-CLD-000080"
@@ -41,8 +44,11 @@ control "SEC-2.2" do
   desc "A customer-managed CMK used to encrypt secrets should itself rotate. "\
        "Secrets on the AWS-managed key are skipped (AWS-rotated)."
   tag severity:              "medium"
+  tag severity_source:       "unassessed"
   tag nist:                  ["SC-12", "SC-12 (2)"]
-  tag cci:                   ["CCI-001967"]
+  tag ksi:                   ["KSI-SVC-ASM"]
+  tag nist_r4:               ["SC-12", "SC-12 (2)"]
+  tag cci:                   ["CCI-002428", "CCI-002443"]
   tag local_number:          "SEC-2.2"
   tag applicable_partitions: ["aws", "aws-us-gov"]
   tag implementation_status: "implemented"
@@ -70,7 +76,10 @@ control "SEC-2.3" do
        "control is ensuring a KMS key is in use. Passes with the CMK-in-use "\
        "proxy assertion plus the AWS validation evidence."
   tag severity:              "medium"
+  tag severity_source:       "unassessed"
   tag nist:                  ["SC-13"]
+  tag ksi:                   ["KSI-SVC-SIN", "KSI-SVC-VRI"]
+  tag nist_r4:               ["SC-13"]
   tag cci:                   ["CCI-002450"]
   tag local_number:          "SEC-2.3"
   tag srg:                   "SRG-OS-000404-CLD-000080"

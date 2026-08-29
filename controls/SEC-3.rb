@@ -12,7 +12,7 @@ control "SEC-3.1" do
   tag severity:              "high"
   tag severity_source:       "assessed"
   tag nist:                  ["AC-3", "AC-6"]
-  tag cci:                   ["CCI-000366"]
+  tag cci:                   ["CCI-000213", "CCI-000225"]
   tag local_number:          "SEC-3.1"
   tag srg:                   "SRG-OS-000001-CLD-000010"
   tag applicable_partitions: ["aws", "aws-us-gov"]

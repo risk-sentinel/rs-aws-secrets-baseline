@@ -10,7 +10,7 @@ control "SEC-5.1" do
   tag severity:              "low"
   tag severity_source:       "assessed"
   tag nist:                  ["CM-8"]
-  tag cci:                   ["CCI-000366"]
+  tag cci:                   ["CCI-003967"]
   tag local_number:          "SEC-5.1"
   tag applicable_partitions: ["aws", "aws-us-gov"]
   tag implementation_status: "implemented"

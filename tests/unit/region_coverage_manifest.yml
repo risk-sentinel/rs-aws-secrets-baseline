@@ -50,10 +50,22 @@ resources:
     watch: { service: secretsmanager, operation: get_resource_policy }
     status: known_blind
 
+  # HARNESS LIMITATION, not a resource defect. Constructed here the resource
+  # raises NoMethodError on @aws.ec2_client, because this harness instantiates
+  # resources OUTSIDE InSpec's normal resource machinery and something that
+  # machinery provides is missing. In a real exec the call resolves: the live
+  # nightly shows SEC-7.1 failing normally with a VPC-endpoint count, and no
+  # NoMethodError anywhere in the job log.
+  #
+  # Recorded rather than silenced, because it is the harness's own false
+  # positive and the next person must not "fix" working production code on the
+  # strength of it. Any `raised ...` result from this harness needs corroborating
+  # against a real exec before it is treated as a defect.
   - resource: aws_secretsmanager_vpc_endpoints
     klass: AwsSecretsManagerVpcEndpoints
     watch:
       service: ec2
       operation: describe_vpc_endpoints
       payload: { vpc_endpoints: [] }
-    status: known_blind
+    status: unobservable
+    reason: "harness instantiates outside InSpec's resource machinery, so @aws.ec2_client raises here but resolves in a real exec"

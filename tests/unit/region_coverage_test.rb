@@ -117,6 +117,7 @@ end
 failures = []
 reported = []
 unobservable = []
+target_derived = []
 
 MANIFEST.fetch("resources").each do |e|
   name   = e.fetch("resource")
@@ -137,7 +138,23 @@ MANIFEST.fetch("resources").each do |e|
   begin
     args.empty? ? klass.new : klass.new(**args)
   rescue StandardError => ex
-    failures << "#{name}: raised #{ex.class}: #{ex.message}"
+    # A raise here is a LEAD, not a finding. This harness instantiates resources
+    # outside InSpec's normal resource machinery, and something that machinery
+    # supplies can be missing — which has already produced one false positive
+    # against code that runs correctly in a real exec. So a resource explicitly
+    # marked `unobservable` (with its reason) reports rather than fails; anything
+    # else still fails loudly, because an unexplained raise must not be silent.
+    if status == "unobservable"
+      reason = e["reason"].to_s
+      if reason.empty?
+        failures << "#{name}: raised #{ex.class} and `unobservable` requires a `reason`"
+      else
+        unobservable << "#{name}: raised #{ex.class} — #{reason}"
+        puts "  UNOBSERVABLE #{name} — raised #{ex.class}; #{reason}"
+      end
+    else
+      failures << "#{name}: raised #{ex.class}: #{ex.message}"
+    end
     next
   end
 
@@ -146,6 +163,20 @@ MANIFEST.fetch("resources").each do |e|
 
   if missed.empty?
     puts "  PASS         #{name} — queried all #{REGIONS.size} regions"
+  elsif status == "target_derived"
+    # A third CORRECT pattern, distinct from both sweeping and being blind: the
+    # region is resolved from the caller's own input — an ARN that names its
+    # region, or the scan target itself (cis-rhel-9-baseline reads it from IMDS
+    # on the host being scanned). Sweeping every region would be WRONG for these:
+    # it would assess resources the caller did not ask about, possibly outside
+    # the boundary. Requires a reason, and is NOT a defect.
+    reason = e["reason"].to_s
+    if reason.empty?
+      failures << "#{name}: status `target_derived` requires a `reason`"
+    else
+      target_derived << "#{name}: #{reason}"
+      puts "  TARGET-REGION #{name} — #{reason}"
+    end
   elsif status == "unobservable"
     # Not a pass and not a defect: something about the service makes the walk
     # invisible to a stubbed client (endpoint discovery is the usual cause —
@@ -169,6 +200,11 @@ MANIFEST.fetch("resources").each do |e|
 end
 
 puts
+unless target_derived.empty?
+  puts "#{target_derived.size} resource(s) resolve region from the caller's input (correct, not swept):"
+  target_derived.each { |t| puts "  - #{t}" }
+  puts
+end
 unless unobservable.empty?
   puts "#{unobservable.size} resource(s) NOT observable by this harness (not a defect):"
   unobservable.each { |u| puts "  - #{u}" }
@@ -181,7 +217,7 @@ unless reported.empty?
 end
 
 if failures.empty?
-  puts "region coverage: OK (#{MANIFEST.fetch('resources').size} checked, #{reported.size} known-blind, #{unobservable.size} unobservable)"
+  puts "region coverage: OK (#{MANIFEST.fetch('resources').size} checked, #{reported.size} known-blind, #{unobservable.size} unobservable, #{target_derived.size} target-derived)"
   exit 0
 end
 

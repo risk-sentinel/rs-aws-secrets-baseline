@@ -63,7 +63,22 @@ control "SEC-2.2" do
     key = aws_secretsmanager_secret(secret_id: arn).kms_key_id.to_s
     next if key.empty? || key.match?(DEFAULT_KMS)
 
-    describe aws_kms_key(key_id: key) do
+    # aws_kms_key_rotation, not the stock aws_kms_key: the stock resource does
+    # not expose rotation_enabled at the pinned inspec-aws version, so every
+    # assertion raised undefined-method and the control failed while assessing
+    # nothing (#13).
+    rotation = aws_kms_key_rotation(key_id: key)
+
+    # Assert we actually looked BEFORE asserting what we found. Without this an
+    # AccessDenied reads as "rotation disabled" — an inability to assess wearing
+    # the costume of a finding, which is the defect #13 was really about.
+    describe rotation do
+      it { should be_assessed }
+    end
+
+    next unless rotation.assessed?
+
+    describe rotation do
       its("rotation_enabled") { should eq true }
     end
   end

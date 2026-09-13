@@ -1,0 +1,71 @@
+# Which custom resources must enumerate every enabled region, and how the
+# harness should construct and observe each one.
+#
+#   status - `enforced` must query every region and fails the build if it
+#            regresses. `known_blind` is reported without failing, so this
+#            harness can land before the fixes. `unobservable` means the walk
+#            cannot be seen through a stubbed client, requires a `reason`, and
+#            is NOT a defect.
+#   watch  - NEVER watch describe_regions: it is the one-off discovery call made
+#            against the default client and proves nothing about the walk.
+#            Two resources MAY share a service/operation — observations are
+#            keyed by that pair and cleared before each construction.
+#
+# EVERY resource here is currently region-blind (#26), and unlike the other
+# profiles there is no correct sibling in this repository to copy. The pattern
+# lives in cis-aws-foundations-baseline/libraries/_region_enumeration.rb.
+#
+# Why this repository matters more than most: AWS Secrets Manager is REGIONAL.
+# A secret lives in exactly one region, and the same logical name can exist in
+# several. A single-region client therefore does not under-report slightly — it
+# reports confidently on a region that may hold none of the boundary's secrets,
+# and the controls pass.
+#
+# OPEN JUDGEMENT CALL, recorded rather than decided: aws_secretsmanager_secret
+# and aws_secretsmanager_secret_policy take a `secret_id`. A full ARN already
+# names its region, so sweeping every region would be wrong for that form and
+# right only for a bare name. Whoever fixes these should branch on which form
+# was supplied rather than sweeping unconditionally.
+
+regions: [us-east-1, us-west-2, eu-west-1]
+
+resources:
+  - resource: aws_secretsmanager_secrets
+    klass: AWSSecretsManagerSecrets
+    watch:
+      service: secretsmanager
+      operation: list_secrets
+      payload: { secret_list: [] }
+    status: known_blind
+
+  - resource: aws_secretsmanager_secret
+    klass: AWSSecretsManagerSecret
+    args: { secret_id: "example-secret" }
+    watch: { service: secretsmanager, operation: describe_secret }
+    status: known_blind
+
+  - resource: aws_secretsmanager_secret_policy
+    klass: AwsSecretsManagerSecretPolicy
+    args: { secret_id: "example-secret" }
+    watch: { service: secretsmanager, operation: get_resource_policy }
+    status: known_blind
+
+  # HARNESS LIMITATION, not a resource defect. Constructed here the resource
+  # raises NoMethodError on @aws.ec2_client, because this harness instantiates
+  # resources OUTSIDE InSpec's normal resource machinery and something that
+  # machinery provides is missing. In a real exec the call resolves: the live
+  # nightly shows SEC-7.1 failing normally with a VPC-endpoint count, and no
+  # NoMethodError anywhere in the job log.
+  #
+  # Recorded rather than silenced, because it is the harness's own false
+  # positive and the next person must not "fix" working production code on the
+  # strength of it. Any `raised ...` result from this harness needs corroborating
+  # against a real exec before it is treated as a defect.
+  - resource: aws_secretsmanager_vpc_endpoints
+    klass: AwsSecretsManagerVpcEndpoints
+    watch:
+      service: ec2
+      operation: describe_vpc_endpoints
+      payload: { vpc_endpoints: [] }
+    status: unobservable
+    reason: "harness instantiates outside InSpec's resource machinery, so @aws.ec2_client raises here but resolves in a real exec"

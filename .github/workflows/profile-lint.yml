@@ -107,6 +107,12 @@ jobs:
         # region of each call, so no credentials are involved. Resources marked
         # `known_blind` in the manifest are reported without failing; one marked
         # `enforced` that regresses fails the build.
+        run: |
+          set -uo pipefail
+          docker run --rm -v "$PWD:/work" -w /work \
+            --entrypoint /opt/cinc-workstation/embedded/bin/ruby \
+            "${AUDITOR_IMAGE}" tests/unit/region_coverage_test.rb
+
       - name: KMS rotation resource (stubbed AWS, no credentials)
         # #13: SEC-2.2 read rotation_enabled off the stock aws_kms_key, which
         # does not expose it at the pinned inspec-aws version. Every assertion

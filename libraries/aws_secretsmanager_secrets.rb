@@ -4,6 +4,7 @@ require "aws_backend"
 # resolved inspec-aws version no longer ships this resource. Enumerates
 # all secrets via list_secrets with pagination.
 class AWSSecretsManagerSecrets < AwsResourceBase
+  include RegionScope
   name "aws_secretsmanager_secrets"
   desc "Lists all of the secrets that are stored by Secrets Manager in the AWS account."
 
@@ -16,6 +17,7 @@ class AWSSecretsManagerSecrets < AwsResourceBase
   attr_reader :table
 
   FilterTable.create
+    .register_column(:regions,                   field: :region)
     .register_column(:arns,                      field: :arn)
     .register_column(:names,                     field: :name)
     .register_column(:descriptions,              field: :description)
@@ -35,18 +37,34 @@ class AWSSecretsManagerSecrets < AwsResourceBase
     .install_filter_methods_on_resource(self, :table)
 
   def initialize(opts = {})
+    opts = opts.dup
+    region_override = Array(opts.delete(:regions))
     super(opts)
     validate_parameters
     @query_params = {}
+    # Secrets Manager is regional. A secret lives in exactly one region, and the
+    # same logical name can exist in several -- so a single-region client does
+    # not under-report slightly, it reports confidently on a region that may
+    # hold none of the boundary's secrets while every control still passes.
+    @all_regions = region_scope_or_fail!(@aws, region_override)
     @table = fetch_data
   end
 
   def fetch_data
     rows = []
+    each_region_client(::Aws::SecretsManager::Client) do |client, region|
+      rows.concat(fetch_region(client, region))
+    end
+    rows
+  end
+
+  def fetch_region(client, region)
+    rows = []
+    @query_params = {}
     first = true
     loop do
       catch_aws_errors do
-        @api_response = secretsmanager_client.list_secrets(@query_params)
+        @api_response = client.list_secrets(@query_params)
       end
       # A nil response means catch_aws_errors swallowed something — an
       # AccessDenied, or a coding error such as calling a client accessor
@@ -58,12 +76,13 @@ class AWSSecretsManagerSecrets < AwsResourceBase
         raise Inspec::Exceptions::ResourceFailed,
               'aws_secretsmanager_secrets: list_secrets returned no response. The API call ' \
               'failed and the error was suppressed — check credentials, region and ' \
-              'secretsmanager:ListSecrets permission. This is NOT an empty account.'
+              "secretsmanager:ListSecrets permission in #{region}. This is NOT an empty account."
       end
       return rows if first && @api_response.secret_list.empty?
       first = false
       @api_response.secret_list.each do |res|
         rows += [{
+          region: region,
           arn: res.arn,
           name: res.name,
           description: res.description,

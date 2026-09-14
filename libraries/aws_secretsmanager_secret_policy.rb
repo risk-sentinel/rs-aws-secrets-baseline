@@ -19,6 +19,7 @@ require "aws_backend"
 # Resource-policy statement analysis is delegated to the pure-Ruby
 # IamPolicyStatement module (ported from the AWS Foundations baseline).
 class AwsSecretsManagerSecretPolicy < AwsResourceBase
+  include RegionScope
   name "aws_secretsmanager_secret_policy"
   desc "Resource policy and replication posture for a Secrets Manager secret."
   example <<~EX
@@ -32,12 +33,36 @@ class AwsSecretsManagerSecretPolicy < AwsResourceBase
 
   def initialize(opts = {})
     opts = { secret_id: opts } if opts.is_a?(String)
+    opts = opts.dup
+    region_override = Array(opts.delete(:regions))
+    explicit_region = opts.delete(:region)
     super(opts)
     validate_parameters(required: %i(secret_id))
     raise ArgumentError, "#{@__resource_name__}: secret_id must be provided" unless opts[:secret_id] && !opts[:secret_id].empty?
 
     @display_name    = opts[:secret_id]
     @secret_id       = opts[:secret_id]
+
+    # A secret ARN already names its region, so an ARN answers the question by
+    # itself. A bare NAME does not -- the same name can exist in several regions
+    # -- so rather than assume one, resolve it. Silently picking a region would
+    # report confidently on a secret that may not be the one meant.
+    @region = client_region_for(@secret_id, explicit_region)
+    @all_regions = @region ? [@region] : region_scope_or_fail!(@aws, region_override)
+    @found_in_regions = []
+
+    # A bare NAME is only unique within a region, so SEARCH for it rather than
+    # binding to whichever region happens to be first. Taking the first would be
+    # this whole defect in miniature: reporting confidently on a secret that may
+    # not be the one meant, in a region that may not hold it at all.
+    if @region.nil?
+      each_region_client(::Aws::SecretsManager::Client) do |c, region|
+        found = c.describe_secret(secret_id: @secret_id) rescue nil
+        next if found.nil?
+        @found_in_regions << region
+        @region ||= region
+      end
+    end
     @statements      = []
     @replica_regions = []
     @policy_json     = nil
@@ -47,6 +72,14 @@ class AwsSecretsManagerSecretPolicy < AwsResourceBase
       load_policy
       load_replication
     end
+  end
+
+  # Every region the secret name was found in. More than one means the NAME is
+  # ambiguous across regions and a control should say which region it meant.
+  attr_reader :region, :found_in_regions
+
+  def ambiguous_across_regions?
+    Array(@found_in_regions).size > 1
   end
 
   def exists?
@@ -99,7 +132,12 @@ class AwsSecretsManagerSecretPolicy < AwsResourceBase
     @replica_regions = Array(resp.replication_status).map(&:region).compact
   end
 
+  # Region-bound when the region is known. @aws.aws_client caches by class with
+  # no region in the key, so going through it would pin every lookup to whichever
+  # region was seen first -- the original bug, one layer down.
   def secretsmanager_client
+    r = @region || Array(@all_regions).first
+    return ::Aws::SecretsManager::Client.new(region: r) if r
     @aws.aws_client(Aws::SecretsManager::Client)
   end
 end

@@ -31,6 +31,14 @@ depends:
     tag: v1.21.0
 
 inputs:
+  - name: scan_regions
+    type: array
+    value: []                  # REQUIRED. Secrets Manager is REGIONAL: a secret
+                               # lives in exactly one region and the same logical
+                               # name can exist in several, so a single-region
+                               # client reports confidently on a region that may
+                               # hold none of the boundary's secrets.
+                               # Empty is an ERROR. Use ["*"] to sweep the partition.
   - name: aws_partition
     type: string
     value: aws

@@ -47,7 +47,12 @@ resources:
   - resource: aws_secretsmanager_secret_policy
     klass: AwsSecretsManagerSecretPolicy
     args: { secret_id: "example-secret" }
-    watch: { service: secretsmanager, operation: get_resource_policy }
+    # Watches describe_secret, NOT get_resource_policy. describe_secret is the
+    # call that SEARCHES for which region holds the name; get_resource_policy
+    # runs once afterwards against the region that was found. Watching the
+    # post-resolution call would report this as region-blind when the sweep it
+    # performs is the search itself.
+    watch: { service: secretsmanager, operation: describe_secret }
     status: enforced
 
   # Now sweeps regions via each_region_client, so it no longer touches

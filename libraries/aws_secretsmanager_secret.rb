@@ -32,6 +32,20 @@ class AWSSecretsManagerSecret < AwsResourceBase
     # confidently on a secret that may not be the one meant.
     @region = client_region_for(opts[:secret_id], explicit_region)
     @all_regions = @region ? [@region] : region_scope_or_fail!(@aws, region_override)
+    @found_in_regions = []
+
+    # A bare NAME is only unique within a region, so SEARCH for it rather than
+    # binding to whichever region happens to be first. Taking the first would be
+    # this whole defect in miniature: reporting confidently on a secret that may
+    # not be the one meant, in a region that may not hold it at all.
+    if @region.nil?
+      each_region_client(::Aws::SecretsManager::Client) do |c, region|
+        found = c.describe_secret(secret_id: opts[:secret_id]) rescue nil
+        next if found.nil?
+        @found_in_regions << region
+        @region ||= region
+      end
+    end
 
     catch_aws_errors do
       resp = secretsmanager_client.describe_secret({ secret_id: opts[:secret_id] })
@@ -68,6 +82,14 @@ class AWSSecretsManagerSecret < AwsResourceBase
   def secret_id
     return nil unless exists?
     @res[:secret_id]
+  end
+
+  # Every region the secret name was found in. More than one means the NAME is
+  # ambiguous across regions and a control should say which region it meant.
+  attr_reader :region, :found_in_regions
+
+  def ambiguous_across_regions?
+    Array(@found_in_regions).size > 1
   end
 
   def exists?

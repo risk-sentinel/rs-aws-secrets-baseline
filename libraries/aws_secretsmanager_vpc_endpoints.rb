@@ -20,6 +20,10 @@ class AwsSecretsManagerVpcEndpoints < AwsResourceBase
   attr_reader :endpoint_ids, :service_names
 
   def initialize(opts = {})
+    opts = opts.dup
+    # Removed BEFORE super: AwsResourceBase forwards unknown keys to
+    # validate_parameters, which raises "Unexpected arguments found".
+    region_override = Array(opts.delete(:regions))
     super(opts)
     validate_parameters
     @endpoint_ids = []

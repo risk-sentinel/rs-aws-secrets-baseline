@@ -36,36 +36,35 @@ resources:
       service: secretsmanager
       operation: list_secrets
       payload: { secret_list: [] }
-    status: known_blind
+    status: enforced
 
   - resource: aws_secretsmanager_secret
     klass: AWSSecretsManagerSecret
     args: { secret_id: "example-secret" }
     watch: { service: secretsmanager, operation: describe_secret }
-    status: known_blind
+    status: enforced
 
   - resource: aws_secretsmanager_secret_policy
     klass: AwsSecretsManagerSecretPolicy
     args: { secret_id: "example-secret" }
-    watch: { service: secretsmanager, operation: get_resource_policy }
-    status: known_blind
+    # Watches describe_secret, NOT get_resource_policy. describe_secret is the
+    # call that SEARCHES for which region holds the name; get_resource_policy
+    # runs once afterwards against the region that was found. Watching the
+    # post-resolution call would report this as region-blind when the sweep it
+    # performs is the search itself.
+    watch: { service: secretsmanager, operation: describe_secret }
+    status: enforced
 
-  # HARNESS LIMITATION, not a resource defect. Constructed here the resource
-  # raises NoMethodError on @aws.ec2_client, because this harness instantiates
-  # resources OUTSIDE InSpec's normal resource machinery and something that
-  # machinery provides is missing. In a real exec the call resolves: the live
-  # nightly shows SEC-7.1 failing normally with a VPC-endpoint count, and no
-  # NoMethodError anywhere in the job log.
-  #
-  # Recorded rather than silenced, because it is the harness's own false
-  # positive and the next person must not "fix" working production code on the
-  # strength of it. Any `raised ...` result from this harness needs corroborating
-  # against a real exec before it is treated as a defect.
+  # Now sweeps regions via each_region_client, so it no longer touches
+  # @aws.ec2_client and the earlier harness false-positive is gone with it.
+    status: enforced
+
+  # Now sweeps regions via each_region_client, so it no longer touches
+  # @aws.ec2_client — the earlier harness false-positive is gone with it.
   - resource: aws_secretsmanager_vpc_endpoints
     klass: AwsSecretsManagerVpcEndpoints
     watch:
       service: ec2
       operation: describe_vpc_endpoints
       payload: { vpc_endpoints: [] }
-    status: unobservable
-    reason: "harness instantiates outside InSpec's resource machinery, so @aws.ec2_client raises here but resolves in a real exec"
+    status: enforced

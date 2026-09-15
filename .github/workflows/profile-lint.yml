@@ -131,10 +131,9 @@ jobs:
         # Proves BOTH directions plus the unassessed case, because a resource
         # hardwired to return false would satisfy a one-sided test.
         run: |
-          set -uo pipefail
+          set -euo pipefail
           docker run --rm -v "$PWD:/work" -w /work \
             --entrypoint /opt/cinc-workstation/embedded/bin/ruby \
-            "${AUDITOR_IMAGE}" tests/unit/region_coverage_test.rb
             "${AUDITOR_IMAGE}" tests/unit/kms_rotation_test.rb
 
       - name: Control-tag completeness

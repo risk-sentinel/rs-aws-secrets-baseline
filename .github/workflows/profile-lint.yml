@@ -120,6 +120,22 @@ jobs:
             --entrypoint /opt/cinc-workstation/embedded/bin/ruby \
             "${AUDITOR_IMAGE}" tests/unit/region_coverage_test.rb
 
+      - name: KMS rotation resource (stubbed AWS, no credentials)
+        # #13: SEC-2.2 read rotation_enabled off the stock aws_kms_key, which
+        # does not expose it at the pinned inspec-aws version. Every assertion
+        # raised undefined-method, so the control failed seven times while
+        # assessing nothing — an inability to assess wearing the costume of a
+        # finding. `check` and `json` cannot catch that: both only LOAD the
+        # control, and the call is inside the describe block.
+        #
+        # Proves BOTH directions plus the unassessed case, because a resource
+        # hardwired to return false would satisfy a one-sided test.
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:/work" -w /work \
+            --entrypoint /opt/cinc-workstation/embedded/bin/ruby \
+            "${AUDITOR_IMAGE}" tests/unit/kms_rotation_test.rb
+
       - name: Control-tag completeness
         # `check` and `json` read tags but assert nothing about them. A control
         # with no Rev 4 anchor, a tag written twice, or a tag whose value is a

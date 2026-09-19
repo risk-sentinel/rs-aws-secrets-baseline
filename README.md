@@ -140,7 +140,7 @@ jobs:
 include:
   - project: risk-sentinel/rs-aws-secrets-baseline
     ref: v0.1.5
-    file: /ci/gitlab/exec-evidence.yml
+    file: /ci/jobs/exec-evidence.yml
     inputs:
       target: my-account
       boundary: my-boundary

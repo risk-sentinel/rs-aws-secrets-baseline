@@ -5,7 +5,7 @@
 #   include:
 #     - project: <your-org>/rs-aws-secrets-baseline
 #       ref: v0.1.5
-#       file: /ci/gitlab/exec-evidence.yml
+#       file: /ci/jobs/exec-evidence.yml
 #       inputs:
 #         target: my-account
 #         profile_name: rs-aws-secrets-v1r1

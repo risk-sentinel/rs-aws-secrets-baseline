@@ -28,7 +28,7 @@ supports:
 depends:
   - name: inspec-aws
     git: https://github.com/inspec/inspec-aws.git
-    tag: v1.21.0
+    tag: v1.83.63
 
 inputs:
   - name: scan_regions

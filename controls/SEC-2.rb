@@ -11,10 +11,10 @@ control "SEC-2.1" do
        "CMK. When require_cmk is true, assert a non-default CMK is in use."
   tag severity:              "medium"
   tag severity_source:       "unassessed"
-  tag nist:                  ["SC-28", "SC-12"]
-  tag ksi:                   ["KSI-SVC-ASM", "KSI-SVC-SIN"]
-  tag nist_r4:               ["SC-28 (1)"]
-  tag cci:                   ["CCI-002475"]
+  tag nist:                  ['SC-12', 'SC-28 (1)']
+  tag ksi:                   ['KSI-SVC-ASM', 'KSI-SVC-SIN']
+  tag nist_r4:               ['SC-28 (1)']
+  tag cci:                   ['CCI-001138', 'CCI-002476']
   tag local_number:          "SEC-2.1"
   tag srg:                   "SRG-OS-000404-CLD-000080"
   tag applicable_partitions: ["aws", "aws-us-gov"]
@@ -92,10 +92,10 @@ control "SEC-2.3" do
        "proxy assertion plus the AWS validation evidence."
   tag severity:              "medium"
   tag severity_source:       "unassessed"
-  tag nist:                  ["SC-13"]
-  tag ksi:                   ["KSI-SVC-SIN", "KSI-SVC-VRI"]
-  tag nist_r4:               ["SC-13"]
-  tag cci:                   ["CCI-002450"]
+  tag nist:                  ['SC-13 b']
+  tag ksi:                   ['KSI-SVC-SIN', 'KSI-SVC-VRI']
+  tag nist_r4:               ['SC-13']
+  tag cci:                   ['CCI-002450']
   tag local_number:          "SEC-2.3"
   tag srg:                   "SRG-OS-000404-CLD-000080"
   tag applicable_partitions: ["aws", "aws-us-gov"]

@@ -36,10 +36,10 @@ control "SEC-1.2" do
   desc "Rotation must occur at least as often as policy requires."
   tag severity:              "medium"
   tag severity_source:       "unassessed"
-  tag nist:                  ["IA-5 (1) (e)"]
-  tag ksi:                   ["KSI-IAM-APM"]
-  tag nist_r4:               ["IA-5 (1) (f)"]
-  tag cci:                   ["CCI-002041"]
+  tag nist:                  ['IA-5 f']
+  tag ksi:                   ['KSI-IAM-APM']
+  tag nist_r4:               ['IA-5 g']
+  tag cci:                   ['CCI-000182']
   tag local_number:          "SEC-1.2"
   tag fsbp:                  "SecretsManager.4"
   tag applicable_partitions: ["aws", "aws-us-gov"]

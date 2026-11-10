@@ -47,10 +47,10 @@ control "SEC-3.2" do
        "the Secrets Manager TLS-only endpoints (AWS-inherited) and are N/A."
   tag severity:              "medium"
   tag severity_source:       "unassessed"
-  tag nist:                  ["SC-8", "SC-8 (1)"]
-  tag ksi:                   ["KSI-CNA-MAT", "KSI-CNA-ULN", "KSI-SVC-SIN"]
-  tag nist_r4:               ["SC-8"]
-  tag cci:                   ["CCI-002418"]
+  tag nist:                  ['SC-8 (1)', 'SC-8']
+  tag ksi:                   ['KSI-CNA-MAT', 'KSI-CNA-ULN', 'KSI-SVC-SIN']
+  tag nist_r4:               ['SC-8', 'SC-8 (1)']
+  tag cci:                   ['CCI-002421', 'CCI-002418']
   tag local_number:          "SEC-3.2"
   tag srg:                   "SRG-OS-000033-CLD-000115"
   tag applicable_partitions: ["aws", "aws-us-gov"]

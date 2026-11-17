@@ -60,8 +60,14 @@ class AwsSecretsManagerVpcEndpoints < AwsResourceBase
     @endpoint_regions ||= {}
   end
 
+  # Regions read successfully that have no endpoint. A region that could not
+  # be read is in unreadable_regions instead, never counted as missing.
   def regions_without_endpoint
-    Array(@all_regions) - endpoint_regions.keys
+    Array(@all_regions) - endpoint_regions.keys - region_errors.keys
+  end
+
+  def unreadable_regions
+    region_errors.map { |r, e| "#{r}: #{e}" }
   end
 
   def exists?

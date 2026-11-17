@@ -8,7 +8,7 @@ control "SEC-7.1" do
        "(PrivateLink) for Secrets Manager keeps secret retrieval off the "\
        "public internet. Gated on require_vpc_endpoint."
   desc  'check', "
-    Applies only when the input `require_vpc_endpoint` is true. Across the scan regions, at least one interface VPC endpoint for the Secrets Manager service (`com.amazonaws.<region>.secretsmanager`) must exist.
+    Applies only when the input `require_vpc_endpoint` is true. Every region in `scan_regions` must have at least one interface VPC endpoint for the Secrets Manager service (`com.amazonaws.<region>.secretsmanager`). A region whose endpoints cannot be read fails as unreadable, not as missing an endpoint.
   "
   desc  'fix', "
     Create an interface endpoint in each VPC whose workloads read secrets:
@@ -33,8 +33,9 @@ control "SEC-7.1" do
   impact 0.0 unless require_ep
   only_if("require_vpc_endpoint is false") { require_ep }
 
-  describe "Secrets Manager interface VPC endpoint" do
-    subject { aws_secretsmanager_vpc_endpoints }
-    it { should exist }
+  endpoints = aws_secretsmanager_vpc_endpoints(regions: input("scan_regions"))
+  describe endpoints do
+    its("unreadable_regions") { should be_empty }
+    its("regions_without_endpoint") { should be_empty }
   end
 end

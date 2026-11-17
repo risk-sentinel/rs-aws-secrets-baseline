@@ -7,6 +7,17 @@ control "SEC-6.1" do
   desc "Access to secrets (GetSecretValue) and management actions must be "\
        "auditable. At least one multi-region CloudTrail trail must be logging "\
        "and capturing global/management events."
+  desc  'check', "
+    List the account's CloudTrail trails. At least one must exist, be a multi-region trail, and be logging. Secrets Manager API calls are management events, which such a trail records.
+  "
+  desc  'fix', "
+    ```
+    aws cloudtrail create-trail --name <trail> --s3-bucket-name <bucket> --is-multi-region-trail --include-global-service-events
+    aws cloudtrail start-logging --name <trail>
+    ```
+
+    Or convert an existing trail: `aws cloudtrail update-trail --name <trail> --is-multi-region-trail`. An organization trail also meets this.
+  "
   tag severity:              "medium"
   tag severity_source:       "unassessed"
   tag nist:                  ['AU-12 c', 'AU-12 a']

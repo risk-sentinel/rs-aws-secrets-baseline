@@ -7,6 +7,16 @@ control "SEC-7.1" do
   desc "AWS recommends running on private networks: an interface VPC endpoint "\
        "(PrivateLink) for Secrets Manager keeps secret retrieval off the "\
        "public internet. Gated on require_vpc_endpoint."
+  desc  'check', "
+    Applies only when the input `require_vpc_endpoint` is true. Across the scan regions, at least one interface VPC endpoint for the Secrets Manager service (`com.amazonaws.<region>.secretsmanager`) must exist.
+  "
+  desc  'fix', "
+    Create an interface endpoint in each VPC whose workloads read secrets:
+
+    ```
+    aws ec2 create-vpc-endpoint --vpc-endpoint-type Interface --vpc-id <vpc> --service-name com.amazonaws.<region>.secretsmanager --subnet-ids <subnet> ... --security-group-ids <sg> --private-dns-enabled
+    ```
+  "
   tag severity:              "medium"
   tag severity_source:       "unassessed"
   tag nist:                  ['SC-7 a']

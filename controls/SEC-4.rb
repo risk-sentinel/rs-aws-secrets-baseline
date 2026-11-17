@@ -10,10 +10,10 @@ control "SEC-4.1" do
        "into GovCloud is not supported and is treated as N/A."
   tag severity:              "medium"
   tag severity_source:       "unassessed"
-  tag nist:                  ["CP-9"]
-  tag ksi:                   ["KSI-RPL-ABO"]
-  tag nist_r4:               ["CP-9 (a)"]
-  tag cci:                   ["CCI-000535"]
+  tag nist:                  ['CP-9 (b)']
+  tag ksi:                   ['KSI-RPL-ABO']
+  tag nist_r4:               ['CP-9 (b)']
+  tag cci:                   ['CCI-000537']
   tag local_number:          "SEC-4.1"
   tag fsbp:                  "SecretsManager.replication"
   tag applicable_partitions: ["aws", "aws-us-gov"]

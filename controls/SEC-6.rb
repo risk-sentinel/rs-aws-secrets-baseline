@@ -9,10 +9,10 @@ control "SEC-6.1" do
        "and capturing global/management events."
   tag severity:              "medium"
   tag severity_source:       "unassessed"
-  tag nist:                  ["AU-2", "AU-12"]
-  tag ksi:                   ["KSI-CMT-LMC", "KSI-MLA-LET", "KSI-MLA-OSM", "KSI-MLA-RVL"]
-  tag nist_r4:               ["AU-12 c"]
-  tag cci:                   ["CCI-000172"]
+  tag nist:                  ['AU-12 c', 'AU-12 a']
+  tag ksi:                   ['KSI-MLA-LET']
+  tag nist_r4:               ['AU-12 a', 'AU-12 c']
+  tag cci:                   ['CCI-000172', 'CCI-000169']
   tag local_number:          "SEC-6.1"
   tag srg:                   "SRG-OS-000342-CLD-000020"
   tag applicable_partitions: ["aws", "aws-us-gov"]

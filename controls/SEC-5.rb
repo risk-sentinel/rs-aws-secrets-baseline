@@ -9,10 +9,10 @@ control "SEC-5.1" do
        "empty, at least one non-system tag must exist."
   tag severity:              "low"
   tag severity_source:       "assessed"
-  tag nist:                  ["CM-8"]
-  tag nist_r4:               ["CM-8"]
-  tag ksi:                   ["KSI-PIY-GIV"]
-  tag cci:                   ["CCI-003967"]
+  tag nist:                  ['CM-8 a 5']
+  tag ksi:                   ['KSI-PIY-GIV']
+  tag nist_r4:               ['CM-8']
+  tag cci:                   ['CCI-003967']
   tag local_number:          "SEC-5.1"
   tag applicable_partitions: ["aws", "aws-us-gov"]
   tag implementation_status: "implemented"
@@ -49,10 +49,10 @@ control "SEC-5.2" do
        "reduce the attack surface. Never-accessed/new secrets are not flagged."
   tag severity:              "low"
   tag severity_source:       "assessed"
-  tag nist:                  ["AC-2 (3)"]
-  tag ksi:                   ["KSI-IAM-AAM", "KSI-IAM-JIT", "KSI-IAM-SUS"]
-  tag nist_r4:               ["AC-2 (3)"]
-  tag cci:                   ["CCI-000017"]
+  tag nist:                  ['AC-2 (3) (d)']
+  tag ksi:                   ['KSI-IAM-AAM', 'KSI-IAM-JIT', 'KSI-IAM-SUS']
+  tag nist_r4:               ['AC-2 (3)']
+  tag cci:                   ['CCI-000017']
   tag local_number:          "SEC-5.2"
   tag fsbp:                  "SecretsManager.3"
   tag applicable_partitions: ["aws", "aws-us-gov"]

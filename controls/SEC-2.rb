@@ -13,8 +13,8 @@ control "SEC-2.1" do
   tag severity_source:       "unassessed"
   tag nist:                  ['SC-12', 'SC-28 (1)']
   tag ksi:                   ['KSI-SVC-ASM', 'KSI-SVC-SIN']
-  tag nist_r4:               ['SC-28 (1)']
-  tag cci:                   ['CCI-001138', 'CCI-002476']
+  tag nist_r4:               ['SC-12', 'SC-28 (1)']
+  tag cci:                   ['CCI-002441', 'CCI-002476']
   tag local_number:          "SEC-2.1"
   tag srg:                   "SRG-OS-000404-CLD-000080"
   tag applicable_partitions: ["aws", "aws-us-gov"]

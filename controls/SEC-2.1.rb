@@ -29,7 +29,8 @@ control "SEC-2.1" do
   tag implementation_status: "implemented"
 
   require_cmk = input("require_cmk")
-  scoped = secrets_in_scope
+  # Gate first: when require_cmk is false there is nothing to list.
+  scoped = require_cmk ? secrets_in_scope : []
   default_kms = secretsmanager_default_kms
   applicable = require_cmk && !scoped.empty?
   impact 0.5

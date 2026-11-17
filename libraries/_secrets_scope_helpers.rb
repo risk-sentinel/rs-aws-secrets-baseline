@@ -10,13 +10,25 @@
 # rotation, KMS key and policy are AWS-managed, so failing them against a
 # customer baseline would be a false positive (inherited-from-AWS).
 module SecretsScopeHelpers
+  # Raised when the secrets in scope cannot be listed. An empty list would make
+  # every per-secret control skip as "no secrets in scope" -- reporting an
+  # account it could not read as an account with nothing to check.
+  class ScopeUnreadable < StandardError; end
+
   def secrets_in_scope
-    # aws_secretsmanager_secrets uses catch_aws_errors internally, so API
-    # errors (AccessDenied, etc.) yield an empty table rather than raising.
-    # We deliberately do NOT rescue here — a coding error (e.g. a missing
-    # resource) must surface as a failure, not be masked as empty scope.
     @secrets_in_scope ||= begin
-      all = aws_secretsmanager_secrets
+      # Resources cannot read inputs, so the region scope is passed in here.
+      all = aws_secretsmanager_secrets(regions: input("scan_regions"))
+      # The resource records a region it could not list in region_errors and
+      # moves on, and a missing scan_regions fails the resource. Either way
+      # the list below would be short or empty, so stop here instead.
+      problems = all.resource_failed? ? [all.resource_exception_message.to_s] : []
+      problems += all.region_errors.map { |region, err| "#{region}: #{err}" }
+      unless problems.empty?
+        raise ScopeUnreadable,
+              "could not list Secrets Manager secrets, so nothing was assessed: #{problems.join('; ')}"
+      end
+
       customer_owned = []
       all.arns.each_with_index do |arn, i|
         owning = all.owning_services[i]

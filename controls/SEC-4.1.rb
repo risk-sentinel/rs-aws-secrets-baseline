@@ -30,7 +30,8 @@ control "SEC-4.1" do
   tag implementation_status: "implemented"
 
   dr_arns = input("dr_critical_secret_arns")
-  in_scope = secrets_in_scope & dr_arns
+  # Gate first: with no DR-critical secrets declared there is nothing to list.
+  in_scope = dr_arns.empty? ? [] : secrets_in_scope & dr_arns
   applicable = !in_scope.empty?
   impact 0.5
   impact 0.0 unless applicable

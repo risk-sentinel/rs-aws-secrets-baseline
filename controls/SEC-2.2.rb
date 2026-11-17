@@ -5,7 +5,7 @@ control "SEC-2.2" do
   desc "A customer-managed CMK used to encrypt secrets should itself rotate. "\
        "Secrets on the AWS-managed key are skipped (AWS-rotated)."
   desc  'check', "
-    For every customer-owned secret in the scan regions encrypted with a customer managed KMS key (secrets on `alias/aws/secretsmanager` or with no key set are skipped), read the key's rotation status. The scanner must be able to read the status (an access error fails as not assessed), and automatic key rotation must be enabled.
+    For every customer-owned secret in the scan regions encrypted with a customer managed KMS key (secrets on `alias/aws/secretsmanager` or with no key set are skipped), read the key's rotation status, in the region named by the key ARN or else the secret's own region. The scanner must be able to read the status (an access error fails as not assessed), and automatic key rotation must be enabled.
   "
   desc  'fix', "
     ```
@@ -39,7 +39,7 @@ control "SEC-2.2" do
     # not expose rotation_enabled at the pinned inspec-aws version, so every
     # assertion raised undefined-method and the control failed while assessing
     # nothing (#13).
-    rotation = aws_kms_key_rotation(key_id: key)
+    rotation = aws_kms_key_rotation(key_id: key, region: arn.split(":")[3])
 
     # Assert we actually looked BEFORE asserting what we found. Without this an
     # AccessDenied reads as "rotation disabled" — an inability to assess wearing

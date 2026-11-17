@@ -42,7 +42,7 @@ control "SEC-3.1" do
       it "must not contain public (wildcard-principal) Allow statements" do
         expect(policy.public_statements).to be_empty
       end
-      it "must not grant wildcard actions to external principals" do
+      it "must not contain Allow statements with wildcard actions" do
         expect(policy.wildcard_action_statements).to be_empty
       end
     end

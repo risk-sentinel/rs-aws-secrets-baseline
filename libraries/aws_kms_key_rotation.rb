@@ -31,21 +31,26 @@ class AwsKmsKeyRotation < AwsResourceBase
     end
   EX
 
-  attr_reader :key_id, :rotation_enabled, :connection_error
+  attr_reader :key_id, :region, :rotation_enabled, :connection_error
 
   def initialize(opts = {})
     opts = { key_id: opts } if opts.is_a?(String)
     super(opts)
-    validate_parameters(required: %i(key_id))
+    validate_parameters(required: %i(key_id), allow: %i(region))
     raise ArgumentError, "#{@__resource_name__}: key_id must be provided" if opts[:key_id].to_s.empty?
 
     @key_id           = opts[:key_id].to_s
+    # A key ARN names its region; a bare key id or alias is only meaningful in
+    # the region the caller passes (the secret's).
+    arn_region = @key_id.start_with?("arn:") ? @key_id.split(":")[3].to_s : ""
+    @region = arn_region.empty? ? opts[:region].to_s : arn_region
     @rotation_enabled = nil
     @assessed         = false
     @connection_error = nil
 
     catch_aws_errors do
-      resp = @aws.aws_client(Aws::KMS::Client).get_key_rotation_status(key_id: @key_id)
+      client = @region.empty? ? @aws.aws_client(Aws::KMS::Client) : ::Aws::KMS::Client.new(region: @region)
+      resp = client.get_key_rotation_status(key_id: @key_id)
       @rotation_enabled = resp.key_rotation_enabled
       @assessed         = true
     end

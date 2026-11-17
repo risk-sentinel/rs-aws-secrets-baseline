@@ -5,6 +5,16 @@ control "SEC-3.2" do
   desc "When a resource policy is present it should Deny non-TLS access via "\
        "aws:SecureTransport=false. Secrets with no resource policy rely on "\
        "the Secrets Manager TLS-only endpoints (AWS-inherited) and are N/A."
+  desc  'check', "
+    Applies only to customer-owned secrets in the scan regions that have a resource policy. Each policy must contain a Deny statement conditioned on `Bool` `aws:SecureTransport` = `false`. When no secret has a resource policy, the control is not applicable: TLS is enforced by the Secrets Manager endpoints.
+  "
+  desc  'fix', "
+    Add this statement to the secret's resource policy and apply it with `aws secretsmanager put-resource-policy --secret-id <secret-arn> --resource-policy file://policy.json --block-public-policy`:
+
+    ```
+    { \"Sid\": \"DenyInsecureTransport\", \"Effect\": \"Deny\", \"Principal\": \"*\", \"Action\": \"secretsmanager:*\", \"Resource\": \"*\", \"Condition\": { \"Bool\": { \"aws:SecureTransport\": \"false\" } } }
+    ```
+  "
   tag severity:              "medium"
   tag severity_source:       "unassessed"
   tag nist:                  ['SC-8 (1)', 'SC-8']

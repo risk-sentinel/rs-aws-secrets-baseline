@@ -5,6 +5,19 @@ control "SEC-3.1" do
   desc "An Allow statement with Principal \"*\" and no narrowing condition "\
        "makes a secret effectively public. The deep check parses each "\
        "statement. ARNs in secret_arn_allowlist are exempt."
+  desc  'check', "
+    For every customer-owned secret in the scan regions that is not listed in the input `secret_arn_allowlist`, parse the resource policy. It must contain no Allow statement with a wildcard principal (`*`, or `AWS: \"*\"`) and no `Condition`, and no Allow statement whose action contains `*`.
+  "
+  desc  'fix', "
+    Replace wildcard principals with specific account or role ARNs, or add a condition that narrows access (for example `aws:PrincipalOrgID`). Replace wildcard actions with the specific actions needed, such as `secretsmanager:GetSecretValue`. Validate before applying:
+
+    ```
+    aws secretsmanager validate-resource-policy --secret-id <secret-arn> --resource-policy file://policy.json
+    aws secretsmanager put-resource-policy --secret-id <secret-arn> --resource-policy file://policy.json --block-public-policy
+    ```
+
+    To remove the policy entirely: `aws secretsmanager delete-resource-policy --secret-id <secret-arn>`.
+  "
   tag severity:              "high"
   tag severity_source:       "assessed"
   tag nist:                  ["AC-3", "AC-6"]

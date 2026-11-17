@@ -4,6 +4,18 @@ control "SEC-1.1" do
   title "Secrets Manager secrets must have automatic rotation enabled"
   desc "Long-lived static secrets are more likely to be compromised. "\
        "Automatic rotation limits the window of exposure."
+  desc  'check', "
+    For every customer-owned Secrets Manager secret in the scan regions (secrets with no `OwningService`), `RotationEnabled` must be true.
+  "
+  desc  'fix', "
+    Configure rotation with a rotation function (AWS provides templates for RDS, Redshift, DocumentDB and others):
+
+    ```
+    aws secretsmanager rotate-secret --secret-id <secret-arn> --rotation-lambda-arn <function-arn> --rotation-rules AutomaticallyAfterDays=<days>
+    ```
+
+    For secrets managed by RDS or Redshift, use that service's managed master user password instead, which rotates automatically.
+  "
   tag severity:              "medium"
   tag severity_source:       "unassessed"
   tag nist:                  ["SC-28"]

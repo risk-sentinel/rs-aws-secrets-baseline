@@ -4,6 +4,16 @@ control "SEC-1.3" do
   title "Secrets must have rotated within the maximum allowed window"
   desc "A rotation schedule that never fires provides no protection; assert "\
        "the last successful rotation is recent enough."
+  desc  'check', "
+    For every customer-owned secret in the scan regions with rotation enabled, `LastRotatedDate` must be set and no more than the input `max_rotation_days` days ago.
+  "
+  desc  'fix', "
+    Find why rotation is not completing: check the rotation function's CloudWatch Logs and the secret's `AWSPENDING` version (`aws secretsmanager describe-secret --secret-id <secret-arn>`). Fix the function's permissions or network access to the target, then rotate now:
+
+    ```
+    aws secretsmanager rotate-secret --secret-id <secret-arn>
+    ```
+  "
   tag severity:              "medium"
   tag severity_source:       "unassessed"
   tag nist:                  ["SC-28"]

@@ -5,6 +5,18 @@ control "SEC-2.1" do
   desc "AWS permits the aws/secretsmanager managed key for most cases, but "\
        "cross-account access and key-policy control require a customer-managed "\
        "CMK. When require_cmk is true, assert a non-default CMK is in use."
+  desc  'check', "
+    Applies only when the input `require_cmk` is true. For every customer-owned secret in the scan regions, `KmsKeyId` must be set and must not be the AWS managed key `alias/aws/secretsmanager`.
+  "
+  desc  'fix', "
+    Create a customer managed KMS key whose key policy grants the principals that read the secret `kms:Decrypt`, then:
+
+    ```
+    aws secretsmanager update-secret --secret-id <secret-arn> --kms-key-id <key-arn>
+    ```
+
+    Secrets Manager re-encrypts the current versions with the new key. Readers need `kms:Decrypt` on it before the change.
+  "
   tag severity:              "medium"
   tag severity_source:       "unassessed"
   tag nist:                  ['SC-12', 'SC-28 (1)']

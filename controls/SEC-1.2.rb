@@ -3,6 +3,14 @@
 control "SEC-1.2" do
   title "Secret rotation interval must be within the maximum allowed window"
   desc "Rotation must occur at least as often as policy requires."
+  desc  'check', "
+    For every customer-owned secret in the scan regions with rotation enabled, `RotationRules.AutomaticallyAfterDays` must be set and no greater than the input `max_rotation_days`. A secret scheduled only by a `ScheduleExpression`, with no `AutomaticallyAfterDays`, fails. Secrets with rotation off are left to SEC-1.1.
+  "
+  desc  'fix', "
+    ```
+    aws secretsmanager rotate-secret --secret-id <secret-arn> --rotation-rules AutomaticallyAfterDays=<days no greater than max_rotation_days>
+    ```
+  "
   tag severity:              "medium"
   tag severity_source:       "unassessed"
   tag nist:                  ['IA-5 f']

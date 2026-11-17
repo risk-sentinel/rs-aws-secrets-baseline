@@ -4,6 +4,16 @@ control "SEC-2.2" do
   title "The CMK protecting secrets must have key rotation enabled"
   desc "A customer-managed CMK used to encrypt secrets should itself rotate. "\
        "Secrets on the AWS-managed key are skipped (AWS-rotated)."
+  desc  'check', "
+    For every customer-owned secret in the scan regions encrypted with a customer managed KMS key (secrets on `alias/aws/secretsmanager` or with no key set are skipped), read the key's rotation status. The scanner must be able to read the status (an access error fails as not assessed), and automatic key rotation must be enabled.
+  "
+  desc  'fix', "
+    ```
+    aws kms enable-key-rotation --key-id <key-arn>
+    ```
+
+    If the control reports the key as not assessed, grant the scanner role `kms:GetKeyRotationStatus` on the key, in its key policy where the key policy governs access.
+  "
   tag severity:              "medium"
   tag severity_source:       "unassessed"
   tag nist:                  ["SC-12", "SC-12 (2)"]

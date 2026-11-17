@@ -4,6 +4,18 @@ control "SEC-5.2" do
   title "Unused / stale secrets must be remediated"
   desc "Secrets not accessed within stale_days are candidates for removal to "\
        "reduce the attack surface. Never-accessed/new secrets are not flagged."
+  desc  'check', "
+    For every customer-owned secret in the scan regions with a `LastAccessedDate`, that date must be no more than the input `stale_days` days ago. Secrets never accessed have no date and pass.
+  "
+  desc  'fix', "
+    Confirm nothing still needs the secret: look in CloudTrail for recent `GetSecretValue` calls and search configuration for its ARN. Then delete it with a recovery window:
+
+    ```
+    aws secretsmanager delete-secret --secret-id <secret-arn> --recovery-window-in-days 30
+    ```
+
+    If it is still needed but read rarely, document why and adjust `stale_days`.
+  "
   tag severity:              "low"
   tag severity_source:       "assessed"
   tag nist:                  ['AC-2 (3) (d)']

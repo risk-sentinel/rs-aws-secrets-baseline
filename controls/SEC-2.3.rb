@@ -6,6 +6,12 @@ control "SEC-2.3" do
        "provides FIPS 140-2/3 validated modules (AWS-inherited); the customer "\
        "control is ensuring a KMS key is in use. Passes with the CMK-in-use "\
        "proxy assertion plus the AWS validation evidence."
+  desc  'check', "
+    For every customer-owned secret in the scan regions, confirm the secret is encrypted by an AWS KMS key: either the customer managed key in `KmsKeyId` or, when none is set, the AWS managed key `alias/aws/secretsmanager`. AWS KMS's FIPS 140 validation is inherited from AWS. In practice every Secrets Manager secret is KMS-encrypted, so this records the encryption path rather than finding a fault.
+  "
+  desc  'fix', "
+    No configuration fix is normally needed: Secrets Manager always encrypts with KMS. Keep AWS's FIPS 140 validation evidence for KMS (https://aws.amazon.com/compliance/fips/) with the system's leveraged evidence. Use the FIPS endpoints (`secretsmanager-fips.<region>.amazonaws.com`) where the system requires FIPS endpoints.
+  "
   tag severity:              "medium"
   tag severity_source:       "unassessed"
   tag nist:                  ['SC-13 b']

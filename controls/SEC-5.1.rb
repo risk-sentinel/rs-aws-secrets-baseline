@@ -5,6 +5,16 @@ control "SEC-5.1" do
   desc "Secrets must be tagged for ownership / classification. When "\
        "required_tag_keys is set, every listed key must be present; when "\
        "empty, at least one non-system tag must exist."
+  desc  'check', "
+    For every customer-owned secret in the scan regions, the secret's tag keys must include every key in the input `required_tag_keys`. When that input is empty, each secret must carry at least one tag.
+  "
+  desc  'fix', "
+    ```
+    aws secretsmanager tag-resource --secret-id <secret-arn> --tags Key=<Key>,Value=<Value>
+    ```
+
+    Set the tags in the infrastructure code as well, so new secrets carry them.
+  "
   tag severity:              "low"
   tag severity_source:       "assessed"
   tag nist:                  ['CM-8 a 5']

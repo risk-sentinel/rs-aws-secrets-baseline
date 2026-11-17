@@ -8,6 +8,16 @@ control "SEC-4.1" do
        "cross-region so they survive a regional outage. Only secrets listed "\
        "in dr_critical_secret_arns are in scope; cross-partition replication "\
        "into GovCloud is not supported and is treated as N/A."
+  desc  'check', "
+    Applies only to customer-owned secrets in the scan regions that are listed in the input `dr_critical_secret_arns`. Each must have at least one replica region. Not applicable when that input is empty.
+  "
+  desc  'fix', "
+    ```
+    aws secretsmanager replicate-secret-to-regions --secret-id <secret-arn> --add-replica-regions Region=<dr-region>[,KmsKeyId=<key-arn-in-dr-region>]
+    ```
+
+    Replication stays within a partition: commercial and GovCloud secrets cannot replicate to each other.
+  "
   tag severity:              "medium"
   tag severity_source:       "unassessed"
   tag nist:                  ['CP-9 (b)']

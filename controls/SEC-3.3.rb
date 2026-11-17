@@ -8,6 +8,18 @@ control "SEC-3.3" do
        "resource, so it cannot be read per-secret. SEC-3.1 provides detective "\
        "coverage of any policy that did become public; this control attests "\
        "the preventive guardrail is in place."
+  desc  'check', "
+    Attestation. The guardrail lives in identity policies or SCPs, which this profile cannot read per secret. Resolve the attestation document: the input `sec_3_3_attestation_uri`, or else the `SEC-3.3` entry under `boundary_docs_base`. It must be reachable, exist, and be no older than `attestation_max_age_days` (default 365). When no location is configured, the control is skipped with instructions. SEC-3.1 gives detective coverage of any policy that did become public.
+  "
+  desc  'fix', "
+    Allow `secretsmanager:PutResourcePolicy` only with the `secretsmanager:BlockPublicPolicy` condition, in identity policies or an SCP, for example:
+
+    ```
+    { \"Effect\": \"Deny\", \"Action\": \"secretsmanager:PutResourcePolicy\", \"Resource\": \"*\", \"Condition\": { \"Bool\": { \"secretsmanager:BlockPublicPolicy\": \"false\" } } }
+    ```
+
+    Record the SCP or policy as the attestation, publish it where the scanner can read it, and set `boundary_docs_base` or `sec_3_3_attestation_uri` (and `block_public_policy_attestation_ref`). Alternatively, record a CMS-pattern attestation with `saf attest apply`.
+  "
   tag severity:              "medium"
   tag severity_source:       "unassessed"
   tag nist:                  ["AC-3", "AC-6"]
